@@ -4,6 +4,33 @@
   
   
   <entry>
+    <title>离散数学————图论总结归纳</title>
+    <link href="/2024/05/30/discrete-mathematics-graph-theory/"/>
+    <url>/2024/05/30/discrete-mathematics-graph-theory/</url>
+    
+    <content type="html"><![CDATA[<h1 id="图论">图论</h1><h2 id="图的基本概念">图的基本概念</h2><h3 id="图的集合表示">图的集合表示</h3><p>图的表示 <span class="math inline">\(G(V,E)\)</span> ，其中 <spanclass="math inline">\(V\)</span> 为顶点集， <spanclass="math inline">\(E\)</span>为边集，都为有限集.边集可以使有向边集，也可以是无向边集.</p><p><span class="math inline">\(V(G)\)</span>，<spanclass="math inline">\(E(G)\)</span> 表示图 <spanclass="math inline">\(G\)</span> 的顶点集和边集.</p><p>有序边的表示方法为 <span class="math inline">\(e_i\)</span> 或者<span class="math inline">\(&lt;v_i,v_j&gt;\)</span>，无序边的表示方法为 <span class="math inline">\(e_i\)</span> 或 <spanclass="math inline">\((v_i,v_j)\)</span>.</p><h3 id="其他一些基本概念">其他一些基本概念</h3><ul><li>阶：顶点数，有 <span class="math inline">\(n\)</span> 个顶点即为<span class="math inline">\(n\)</span> 阶图.</li><li>零图：一条边也没有的图.<span class="math inline">\(n\)</span>阶零图记为 <spanclass="math inline">\(N_n\)</span>.一阶零图称为<strong>平凡图</strong></li><li>空图：在运算中产生 <span class="math inline">\(V\)</span>为空的情况，记为 <span class="math inline">\(\varnothing\)</span>.</li><li>基图：有向图变无向图称它的基图</li><li>环：<ul><li>无向图中，<span class="math inline">\(e_k=(v_i,v_j)\)</span> ，称<span class="math inline">\(e_k\)</span> 与 <spanclass="math inline">\(v_i\)</span>（或 <spanclass="math inline">\(v_j\)</span> ）关联；若 <spanclass="math inline">\(v_i=v_j\)</span> 则关联次数为 <spanclass="math inline">\(2\)</span> ，否则为 <spanclass="math inline">\(1\)</span>. 不关联则为 <spanclass="math inline">\(0\)</span>.</li><li>有向图中，有始终点之分.</li><li>在两种图中，有 <span class="math inline">\(v_i=v_j\)</span> 则称<span class="math inline">\(e_k\)</span> 为<strong>环</strong>.</li></ul></li><li>相邻：点有边连接，边有点连接，称这两个点（边）相邻.</li><li><strong>简单图</strong>：既不含平行边，也不含环的图，称为简单图.含平行边的为多重图.<ul><li>在无向图，平行边只需要同连接两个顶点；在有向图中，平行边需要<strong>方向相同</strong>.</li><li>平行边的条数称为重数. <pre><code class=" mermaid">graph LRsubgraph 不是平行边direction LRa((v1))b((v2))a--&gt;bb--&gt;aendsubgraph 是平行边direction LRc((v1))d((v2))c--&gt;dc--&gt;dend不是平行边 &lt;---&gt; 是平行边</code></pre></li></ul></li><li>度：记 <span class="math inline">\(G\)</span> 为无向图， <spanclass="math inline">\(D\)</span> 为有向图. 则 <spanclass="math inline">\(v\)</span> 作为端点的次数为度数，记为 <spanclass="math inline">\(d_G(v)\)</span>. 有向图中分出度和入度，分别记为<span class="math inline">\(d_D^+(v)\)</span> 和 <spanclass="math inline">\(d_D^-(v)\)</span>. （<em>出为 <spanclass="math inline">\(+\)</span> ，入为 <spanclass="math inline">\(-\)</span> ，正好与电磁学中的通量相反</em>）<ul><li>最大度：<span class="math inline">\(\Delta (G)\)</span> ，<spanclass="math inline">\(\Delta (D)\)</span></li><li>最小度：<span class="math inline">\(\delta (G)\)</span> ，<spanclass="math inline">\(\delta (D)\)</span></li><li>最大/小出度：<span class="math inline">\(\Delta ^+(D)\)</span>，<span class="math inline">\(\delta ^+ (D)\)</span></li><li>最大/小入度：<span class="math inline">\(\Delta ^-(D)\)</span>，<span class="math inline">\(\delta ^- (D)\)</span></li></ul></li><li>悬挂顶点：度数为 <spanclass="math inline">\(1\)</span>，与之关联的边为悬挂边.</li><li>奇度顶点/偶度顶点：无需解释.</li><li>握手定理</li><li>同构（<span class="math inline">\(\cong\)</span>）</li><li>彼得松图</li><li>完全图：<span class="math inline">\(G\)</span> 为 <spanclass="math inline">\(n\)</span> 阶无向简单图，每个顶点都与其余 <spanclass="math inline">\(n-1\)</span> 个顶点相连，则 <spanclass="math inline">\(G\)</span> 为 <spanclass="math inline">\(n\)</span> 阶（无向）完全图，记为 <spanclass="math inline">\(K_n\)</span>；若为有向图，则为 <spanclass="math inline">\(n\)</span> 阶有向完全图.</li><li><span class="math inline">\(n\)</span> 阶竞赛图：<spanclass="math inline">\(n\)</span> 阶有向简单图 <spanclass="math inline">\(D\)</span> 的基图为 <spanclass="math inline">\(n\)</span>阶无向完全图 <spanclass="math inline">\(K_n\)</span> ，则称 <spanclass="math inline">\(D\)</span> 为 <spanclass="math inline">\(n\)</span> 阶竞赛图.</li><li><span class="math inline">\(k-\)</span>正则图：<spanclass="math inline">\(G\)</span> 为 <spanclass="math inline">\(n\)</span> 阶无向简单图，那么 <spanclass="math inline">\(\forall v \in V(G), d(v)=k\)</span> .</li><li>子图、母图、真子图、生成子图：对应子集、原集、真子集、点集相等的子集.</li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>数理基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>离散数学</tag>
+      
+      <tag>数学</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>Guessing Game 1</title>
     <link href="/2024/04/18/ucas-ctf-pwn-guessing-name-1/"/>
     <url>/2024/04/18/ucas-ctf-pwn-guessing-name-1/</url>

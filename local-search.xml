@@ -4,6 +4,68 @@
   
   
   <entry>
+    <title>栈与函数</title>
+    <link href="/2024/12/05/binary-2024-stack-and-function/"/>
+    <url>/2024/12/05/binary-2024-stack-and-function/</url>
+    
+    <content type="html"><![CDATA[<h1 id="汇编中的栈和函数">汇编中的栈和函数</h1><h2 id="linux可执行文件装载过程">linux可执行文件装载过程</h2><p><strong>程序文件</strong>不等于<strong>进程</strong>。当一个程序运行时，操作系统会先把程序文件从<strong>磁盘</strong>中映射到<strong>内存中</strong>。程序文件中的段会被对应的映射到内存中对应的段（比如程序文件中的<code>.text</code> 段映射到内存中的 <code>.text</code>段）。这个过程中有对应的规则，在现在的x86架构的linux中，每个进程都有一个独立的虚拟内存空间，大小为<code>4GB</code>，操作系统会将该进程用到的内存再次映射到物理内存，所以针对一个进程，我们只需关注其进程空间的内存分布即可，操作系统会帮我们管理物理内存。</p><figure><img src="1732614202384.png" alt="进程空间内存布局" /><figcaption aria-hidden="true">进程空间内存布局</figcaption></figure><p>其中，读写段和只读段都是有程序文件本身映射到内存中得到的，而剩下的部分则是随着程序的运行，由进程创建的。我们调试时看到的内存就是进程空间中的内存，在<code>pwndbg</code> 中，你可以用 <code>vmmap</code>查看程序内存布局和权限情况（读写执行权限）。</p><h2 id="函数栈帧">函数栈帧</h2><p>我们想要在一个函数中调用另一个函数，但每个函数都会用到相同的寄存器比如<code>esp</code> <code>ebp</code> <code>eax</code> <code>eip</code>等等，我们如何在调用时保存上一个函数的状态呢？我们需要一种<code>FILO</code>（先进后出）的数据结构（因为先调用的函数最后恢复状态），就是栈。</p><p>在一个进程中，所有的函数都共用一个栈，即上图中的用户栈，正在调用的函数越多，栈越大。其中一个函数在栈上保存信息的那部分栈，叫做该函数的<strong>栈帧</strong>。</p><p><code>esp</code>叫栈顶寄存器，总是指向当前函数栈帧的<strong>栈顶</strong>；<code>ebp</code>叫栈基址寄存器，总是指向当前函数栈帧的<strong>栈底</strong>。当然，由上面的图可知，栈顶在地址上总是比栈底要小的，即<strong>栈向低地址方向增长</strong>。</p><figure><img src="1732631521210.png" alt="栈帧结构图" /><figcaption aria-hidden="true">栈帧结构图</figcaption></figure><p>上图中 <code>esp</code> <code>ebp</code>指向的地址即为当前这两个寄存器的值。</p><h2 id="函数的序幕与尾声">函数的序幕与尾声</h2><p>先复习一下这几条指令：</p><ul><li><code>push</code>可以接一个立即数或一个寄存器操作数，将一个值压入栈中。 例：<code>push eax</code> 等效于 <code>sub esp,4; mov [esp],eax</code></li><li><code>pop</code> 接一个寄存器，将栈中的值弹入寄存器中。例：<code>pop eax</code> 等效于<code>mov eax,[esp]; add esp,4</code></li><li><code>leave</code> 不接任何东西，在一个函数结束的时候调用。例：<code>leave</code> 等效于 <code>mov esp,ebp; pop ebp</code></li><li><code>call</code> 调用一个函数，后面接一个地址（或者说是标签）。例：<code>call printf</code> 等效于<code>push eip; jmp printf</code></li><li><code>ret</code> 从一个函数中返回到原来的执行位置，什么也不接。例：<code>ret</code> 等效于 <code>pop eip</code></li></ul><p>若你用反汇编工具观察过几个C语言程序，你会发现几乎每个函数都有这样的开头和结尾：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs nasm">push ebp<br>mov ebp,esp<br>sub esp,40h     ;这里的立即数取决于函数的局部变量<br>;   ...<br>leave<br>ret<br></code></pre></td></tr></table></figure><p>这几条指令都与栈帧的管理有关。此外，用于调用函数的 <code>call</code>也与函数的栈帧有关。</p><p>下面我们以图示的形式演示x86架构linux系统程序<em>函数的序幕与尾声</em> （上面那段代码）干了什么，对栈有什么改变。</p><p>函数调用之前，应该已经存在这样的结构：</p><p><img src="1732627643474.png" /></p><p>这里的<strong>参数1</strong>、<strong>参数2</strong>等是即将被调用的函数的参数，他们在该函数被调用之前就已经被<strong>倒序</strong>压入栈中（通过<code>push</code>指令）。<code>ebp</code>现在还指向上一个函数的栈底。</p><p>当调用该函数时，即执行 <code>call func</code>指令时，函数的<strong>返回地址</strong>被压入栈中。这个地址指导着：当被调用函数结束后，主函数（调用者）应该执行哪条指令（因为此时<code>eip</code> 早已改变）。</p><p><img src="1732627637653.png" /></p><p>当进入该函数时，即执行 <code>push ebp</code> 时，原来函数的<code>ebp</code> 值被压入栈中，这是为了该函数调用结束后 <code>ebp</code>能恢复到原来的值。栈的结构如下：</p><p><img src="1732630571387.png" /></p><p>接着是一个 <code>mov ebp,esp</code> 指令，将 <code>ebp</code>的值改为栈顶地址，目的是以当前栈顶为基址，开辟一个新的栈帧。</p><p><img src="1732631527508.png" /></p><p>然后 <code>sub esp,40h</code> ，这里开辟了一个 <code>0x40</code>字节大小的栈空间，用来储存当前函数的局部变量。</p><p><img src="1732631521210.png" /></p><p>在函数内部执行完一些操作后，我们开始进入 <em>函数的尾声</em> 。</p><p><code>leave</code> 指令相当于 <code>mov esp,ebp; pop ebp</code>，即将栈顶移至栈帧基址处，相当于销毁栈帧，再将原来储存在栈中的<code>ebp</code> 的旧值（主函数的栈帧基址）恢复到 <code>ebp</code>寄存器中。</p><p><img src="1732627637653.png" /></p><p>最后，<code>ret</code> 指令，即相当于 <code>pop eip</code>，将函数的返回地址弹出到指令寄存器中，下一步将执行主函数被调用前的下一条指令，栈的布局恢复到函数被调用前：</p><p><img src="1732627643474.png" /></p><p>至于栈中的<strong>参数1</strong>、<strong>参数2</strong>等，则由主函数在调用前压入栈中。当然，如果是x64架构的linux，前六个参数用寄存器传参，分别为<code>rdi</code> <code>rsi</code> <code>rdx</code> <code>rcx</code><code>r8</code> <code>r9</code>，剩余的参数则还由栈传递，即会被先压入栈中。（这也是为什么x64栈溢出会用到<strong>ROP</strong>技术，可以自行查询）</p><p>最后附上一张各种状态下栈帧结构图</p><p><img src="1732631535651.png" /></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>binary</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>binary</tag>
+      
+      <tag>pwn</tag>
+      
+      <tag>ctf</tag>
+      
+      <tag>asm</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>汇编简介</title>
+    <link href="/2024/12/05/binary-2024-introduction-to-asm/"/>
+    <url>/2024/12/05/binary-2024-introduction-to-asm/</url>
+    
+    <content type="html"><![CDATA[<h2 id="基本概念">基本概念</h2><p><strong>指令</strong>：即控制cpu的指令，相当于一个或一串对cpu有意义的字节。不同设计的cpu会有不同的指令架构（这与硬件有关）。</p><p><strong>机器码</strong>：cpu能直接执行的一个或一串字节。</p><p><strong>汇编语言</strong>：是机器码的助记符。</p><p><strong>寄存器</strong>：在cpu中的、可以快速访问的少量存储器。</p><p>不同的cpu有不同的指令集，对应的汇编语言也有不同的语法，使用的寄存器也不同。（比如intel的x86、x64架构，ARMv8架构，mips架构，在接下来的课程中，我们着重于x86、x64架构的汇编讲解）</p><p>同一架构下汇编语言的语法也可能有所不同，比如x64有AT&amp;T语法、intel风格语法。此外，不同编译器之间也有一些较小的差异，比如masm和nasm。</p><p>下面给出上面四个概念的对应例子：</p><p><strong>intel</strong>语法风格</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs nasm">push rbp    ; 0x55<br>nop         ; 0x90<br></code></pre></td></tr></table></figure><p>上面的汇编语言片段中，<code>push rbp</code>是一条汇编指令，它对应的机器码是 <code>0x55</code> ，它的含义是将<code>rbp</code> 寄存器中的值压入栈中。</p><p><strong>AT&amp;T</strong>语法风格</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs assembler">pushq %rbp<br>nop<br></code></pre></td></tr></table></figure><p>基于方便的理由，我们这节课暂且以nasm编译器、intel风格语法为例编写汇编程序。</p><h2 id="nasm编译器的安装和使用">nasm编译器的安装和使用</h2><ul><li><p>ubuntu:</p><p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">sudo apt install nasm<br></code></pre></td></tr></table></figure></p></li><li><p>windows:</p><p><ahref="https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win64/">官网下载地址</a></p><p>下载后添加到系统PATH环境变量</p></li></ul><p>检查 ： <code>nasm --version</code></p><p>新建一个文件 <code>hello.asm</code> ，输入如下内容：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs nasm">; Intel 格式<br>; Hello.asm<br>section .data           ; 数据段声明<br>          msg db &quot;Hello World!&quot;,0xA   ; 要输出的字符串<br>          len equ $ -msg              ; 字符串长度<br>section .text                         ; 代码段声明<br>global _start                         ; 指定入口函数<br>_start:                               ; 在屏幕上显示一个字符串<br>          mov edx, len                ; 参数三：字符串长度<br>          mov ecx, msg                ; 参数二：要显示的字符串<br>          mov ebx, 1                  ; 参数一：文件描述符（stdout）<br>          mov eax, 4                  ; 系统调用号（sys_write）<br>          int 0x80                    ; 调用内核功能<br>                                      ; 退出程序<br>          mov ebx, 1                  ; 参数一：退出代码<br>          mov eax, 1                  ; 系统调用号（sys_exit）<br>          int 0x80                    ; 调用内核功能<br></code></pre></td></tr></table></figure><p>保存退出后，在终端输入</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">nasm -f elf64 helloworld.asm -o hello.o<br>ld hello.o -o hello<br></code></pre></td></tr></table></figure><p>即可生成可执行文件 <code>hello</code>，执行它，将会打印一条helloworld</p><h2 id="认识寄存器">认识寄存器</h2><p>在x86架构中，寄存器通常分为以下几类： - 通用寄存器 - 标志寄存器 -指令寄存器 - 段寄存器 - ...</p><p>（还有一些寄存器目前涉及不到，上面几个是现阶段逆向最常用的）</p><p>至于x64架构，只是将上面一些寄存器进行了拓展。</p><h3 id="通用寄存器">通用寄存器</h3><p>x86系统通用寄存器有如下几个：</p><ul><li>eax 通常是和函数的返回值</li><li>ebx 一般用来做数据存取</li><li>ecx 通常用来作为计数器</li><li>edx 乘除运算的默认操作数，也可以用作IO端口</li><li>edi 通常与字符串操作有关</li><li>esi 通常与字符串操作有关</li><li>esp 栈顶寄存器</li><li>ebp 栈基址寄存器</li></ul><p>当然，上面所述都是其常用功能，即高级语言编译器的用法，这几个寄存器也可以做另外用途，自己写汇编的时候不一定遵守其通常行为。</p><p>上述这些寄存器储存大小都是32位，即4字节。若想访问其低16位，可以把前面的e 去掉，比如 <code>ax</code> <code>si</code> 等等。</p><p>针对x64架构，这些寄存器全部由 r 打头，如 <code>rax</code>，储存空间变为64位。另外，x64还新增了8个通用寄存器，即<code>r8-r15</code></p><table><thead><tr><th>64</th><th>低32</th><th>低16</th><th>低8</th></tr></thead><tbody><tr><td>rax</td><td>eax</td><td>ax</td><td>al</td></tr><tr><td>rbx</td><td>ebx</td><td>bx</td><td>bl</td></tr><tr><td>rcx</td><td>ecx</td><td>cx</td><td>cl</td></tr><tr><td>rdx</td><td>edx</td><td>dx</td><td>dl</td></tr><tr><td>rsi</td><td>esi</td><td>si</td><td>sil</td></tr><tr><td>rdi</td><td>edi</td><td>di</td><td>dil</td></tr><tr><td>rbp</td><td>ebp</td><td>bp</td><td>bpl</td></tr><tr><td>rsp</td><td>esp</td><td>sp</td><td>spl</td></tr><tr><td>r8</td><td>r8d</td><td>r8w</td><td>r8b</td></tr><tr><td>r9</td><td>r9d</td><td>r9w</td><td>r9b</td></tr><tr><td>r10</td><td>r10d</td><td>r10w</td><td>r10b</td></tr><tr><td>r11</td><td>r11d</td><td>r11w</td><td>r11b</td></tr><tr><td>r12</td><td>r12d</td><td>r12w</td><td>r12b</td></tr><tr><td>r13</td><td>r13d</td><td>r13w</td><td>r13b</td></tr><tr><td>r14</td><td>r14d</td><td>r14w</td><td>r14b</td></tr><tr><td>r15</td><td>r15d</td><td>r15w</td><td>r15b</td></tr></tbody></table><p><code>ax-dx</code> 可访问其高八位为 <code>ah-dh</code></p><h3 id="标志位寄存器">标志位寄存器</h3><p>这个寄存器中有很多标志位，用于储存cpu执行指令的一些状态。</p><figure><img src="659280-20201021092122855-1111960429.png"alt="标志位寄存器各个标志位" /><figcaption aria-hidden="true">标志位寄存器各个标志位</figcaption></figure><h3 id="指令寄存器">指令寄存器</h3><p>x86下指令寄存器叫 <code>eip</code> ，x64下叫 <code>rip</code>，他们存放着cpu下一条指令所存放的地址，pwn中劫持程序控制流本质上就是修改指令寄存器到期望的地址而完成的。</p><h3 id="段寄存器">段寄存器</h3><p>x86和x64架构都有如下几个段寄存器，它们都是16位的</p><ul><li>cs 代码段</li><li>ds 数据段</li><li>ss 栈段</li><li>es 拓展段</li><li>fs 数据段</li><li>gs 数据段</li></ul><p>段寄存器的知识略显复杂，尤其在x86和x64的保护模式下，暂且不论。有兴趣的同学可以参考<ahref="https://www.cnblogs.com/xuanyuan/p/13850548.html">一口气看完45个寄存器，CPU核心技术大揭秘</a></p><h2 id="认识一些常见的指令">认识一些常见的指令</h2><h3 id="mov">mov</h3><p>我们先来根据上面 <code>helloworld.asm</code> 程序来讲解</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs nasm">_start:                               <br>        mov edx, len                <br>        mov ecx, msg                <br>        mov ebx, 1                  <br>        mov eax, 4                  <br>        int 0x80                    <br><br>        mov ebx, 1                  <br>        mov eax, 1                   <br>        int 0x80                    <br></code></pre></td></tr></table></figure><p>首先是 <code>mov</code> 指令，格式为 <code>mov a,b</code>，用c语言类比则是 <code>a=b;</code>。在intel风格的语法中（也就是现在我们展示的语法），<code>a</code>叫做<strong>目的操作数</strong> ，<code>b</code>叫做<strong>源操作数</strong>。目的操作数和源操作数有一定的规则，以下语法允许的：</p><table><thead><tr><th>源操作数 <code>b</code></th><th>目的操作数 <code>a</code></th></tr></thead><tbody><tr><td>立即数</td><td>寄存器</td></tr><tr><td>立即数</td><td>内存</td></tr><tr><td>寄存器</td><td>寄存器</td></tr><tr><td>寄存器</td><td>内存</td></tr><tr><td>内存</td><td>寄存器</td></tr></tbody></table><p>注：在intel风格语法中，目的操作数在前，源操作数在后；在AT&amp;T语法中，目的操作数在后，源操作数在前。</p><p><strong>立即数</strong>：cpu将指令的一部分解释成数据，这部分数据称为立即数。比如说<code>mov ebx, 1</code> 中的 <code>1</code> 即为立即数。如果你查看<code>mov ebx, 1</code>的机器码（<code>bb 01 00 00 00</code>），你会发现这部分数据确实是存在于指令中的。</p><p>在这里，你可能会对上面的机器码有所疑问，在这里先做解答：</p><ul><li>为什么1是四字节？因为ebx是四字节的寄存器。</li><li>为什么1是倒序的？因为遵循小端序储存。小端序是指一个整数储存在内存中时，其低位（偏小的位）对应低地址，高位对应高地址。上面指令中<code>bb</code> 端是低地址方向，所以 <code>1</code>储存在低地址方向。</li><li>为什么是<code>01</code>而不是<code>10</code>？因为显示的时候以一个字节为单位进行显示，事实上其二进制应为<code>1000 0000</code></li></ul><p>那么<strong>内存</strong>是怎么体现的？</p><p>在nasm语法中，<code>[...]</code> 用以表示取 <code>...</code>的值作为地址，该地址中的值，<code>...</code>是一个有效表达式。比如<code>mov eax,[ebx]</code> 约等于c语言中的 <code>eax=*ebx</code>，相当于 <code>ebx</code> 是一个指针。下面举出一些例子供大家体会：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs nasm">mov eax,[ebx*2+ecx+2]<br>mov eax,[ebx*5]<br>;下面使用了标签<br>mov ebx,[label1+label2*2]<br></code></pre></td></tr></table></figure><p><strong>标签</strong>：在nasm语法中，你可以在数据声明或指令前面写一个<strong>标签</strong>，你在编程中可以引用这个标签，这等价于引用此处指令或声明的地址。</p><p>例如 <code>helloworld.asm</code> 中，<code>msg</code> 和<code>_start</code>都是标签。标签可以加冒号，也可以不加冒号。标签会在数据引用和跳转上带来极大的便利。</p><p><strong>常量</strong></p><p><em><code>equ</code> 定义一个符号，代表一个常量值：当使用<code>equ</code> 时，源文件行上必须包含一个label。 <code>equ</code>的行为就是把给出的label的名字定义成它的操作数(唯一)的值。该定义是不可更改的。</em></p><p>上述 <code>helloworld.asm</code> 中的 <code>len</code>就是一个例子。它相当于在编译期间将所有 <code>len</code>都换成一个立即数。</p><h3 id="int-0x80">int 0x80</h3><p>经过上面的学习，你应该已经了解了 <code>_start</code>标签下面4行汇编指令的意思，接着的指令是<code>int 0x80</code>。它向系统发出 <code>0x80</code>的<strong>软中断</strong>指令，使系统进入<strong>内核态</strong>，并根据一些<strong>通用寄存器</strong>中的值进行<strong>系统调用</strong>。你可以理解为调用操作系统（linux）的函数。</p><p>进行系统调用时，<code>eax</code>储存的是<strong>系统调用号</strong>，并分别由 <code>ebx</code>、<code>ecx</code> 、<code>edx</code> 、<code>esi</code>、<code>edi</code>传递第1-5个参数。<strong>系统调用号</strong>决定了调用系统哪个函数。</p><p>在本例中，前面一段的系统调用号是 <code>4</code> ，写成c语言是<code>write(stdout,msg,len);</code> ，而下面一段则是<code>exit(0);</code> 。</p><p><ahref="https://blog.csdn.net/Nashi_Ko/article/details/120288385">LinuxX86架构 32 64系统调用表</a></p><h3 id="针对-helloworld.asm-的其他东西">针对 <code>helloworld.asm</code>的其他东西</h3><h4 id="section">section</h4><p><code>section</code>是一个伪指令，用于表示声明一个段，如数据段、代码段、bss段等，这与<strong>程序运行时内存分布</strong>相对应。</p><h4 id="global">global</h4><p><code>global</code> 也是一个伪代码，表示导出符号到其他模块。</p><h4 id="数据声明">数据声明</h4><p>在声明以初始化的数据的时候，<code>db</code> <code>dw</code><code>dd</code> <code>dq</code>分别代表以1、2、4、8个字节为单位，前面需要加上一个标签，相当于指针。</p><p>相对的，声明未初始化数据的时候（声明在bss段） ，使用<code>resb</code> <code>resw</code> <code>resd</code><code>resq</code>，后面加上以前面声明类型为单位的数据量，比如<code>label1 resb 64</code> （声明一个64字节的未初始化变量）。</p><h4 id="与">$与$$</h4><p>$表示从它所在源代码行在编译后的起始地址，$$表示从当前段的起始地址。</p><p>所以 <code>$-msg</code> 表达的是当前源码地址减去 <code>msg</code>起始地址，即得到 <code>msg</code> 字符串长度</p><h3 id="lea">lea</h3><p><code>lea</code> 指令用于加载有效地址，用法如下：</p><ul><li><code>lea eax,[401080h]</code> 将一个地址 <code>401080h</code> 写入<code>eax</code></li><li><code>lea eax,dword [ebx]</code> 将储存了地址的 <code>ebx</code>中的值写入 <code>eax</code></li><li><code>lea eax, [ebx+ecx*4+8]</code> 计算 <code>ebx+ecx*4+8</code>的地址并写入 <code>eax</code></li></ul><p>在x64架构中也同理。</p><h3 id="算数指令逻辑指令">算数指令、逻辑指令</h3><p>我们只先提及下面会用到的，其他指令建议自学了解。</p><ul><li><code>add a,b</code> 相当于 <code>a=a+b</code> ，其中 <code>a</code>可以是一个寄存器或内存地址，<code>b</code>可以是一个立即数、寄存器或内存地址。</li><li><code>sub a,b</code> 相减，与上面同理。</li></ul><p><ahref="https://blog.csdn.net/weixin_40179091/article/details/131768536">asm:常见指令大全</a></p><h3 id="栈与函数">栈与函数</h3><p>这里的<strong>栈</strong>指的是程序运行时的栈，它由栈基址寄存器<code>ebp</code> 和栈顶寄存器 <code>esp</code> 来管理。</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs plain">00:0000│ rsp  0x7fffffffd640 ◂— 0x55460000000000<br>01:0008│      0x7fffffffd648 ◂— 0x85ddfd55f4464e00<br>02:0010│ rbp  0x7fffffffd650 ◂— 0x1<br>03:0018│      0x7fffffffd658 —▸ 0x7ffff7dd9d68 (__libc_start_call_main+120) ◂— mov edi, eax<br>04:0020│      0x7fffffffd660 —▸ 0x7fffffffd750 —▸ 0x7fffffffd758 ◂— 0x38 /* &#x27;8&#x27; */<br>05:0028│      0x7fffffffd668 —▸ 0x5555555551e6 (main) ◂— endbr64<br>06:0030│      0x7fffffffd670 ◂— 0x155554040<br></code></pre></td></tr></table></figure><p>这是一个64位程序main函数的栈（使用插件pwndbg）</p><ul><li><code>push</code>可以接一个立即数或一个寄存器操作数，将一个值压入栈中。 例：<code>push eax</code> 等效于 <code>sub esp,4; mov [esp],eax</code></li><li><code>pop</code> 接一个寄存器，将栈中的值弹入寄存器中。例：<code>pop eax</code> 等效于<code>mov eax,[esp]; add esp,4</code></li><li><code>leave</code> 不接任何东西，在一个函数结束的时候调用。例：<code>leave</code> 等效于 <code>mov esp,ebp; pop ebp</code></li><li><code>call</code> 调用一个函数，后面接一个地址（或者说是标签）。例：<code>call printf</code> 等效于<code>push eip; jmp printf</code></li><li><code>ret</code> 从一个函数中返回到原来的执行位置，什么也不接。例：<code>ret</code> 等效于 <code>pop eip</code></li></ul><p>可以通过上节课的 <code>overflow32</code> 程序逆向了解栈帧。</p><p>另，下面是一段经典的x86的shellcode</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs nasm">section .text<br>global _start<br>_start:<br>    xor    eax,eax<br>    push   eax<br>    push   0x68732f2f<br>    push   0x6e69622f<br>    mov    ebx,esp<br>    mov    ecx,eax<br>    mov    edx,eax<br>    mov    al,0xb<br>    int    0x80<br>    xor    eax,eax<br>    inc    eax<br>    int    0x80<br></code></pre></td></tr></table></figure><p>编译链接：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">nasm -f elf32 shellcode.asm -o shellcode.o<br>ld shellcode.o -o shellcode -m elf_i386<br></code></pre></td></tr></table></figure><h3 id="比较与跳转">比较与跳转</h3><p><ahref="https://blog.csdn.net/zmmycsdn/article/details/78511948">汇编跳转指令:JMP、JECXZ、JA、JB、JG、JL、JE、JZ、JS、JC、JO、JP 等</a></p><p><ahref="https://blog.csdn.net/WolvenSec/article/details/139244132">汇编：比较&amp;跳转</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>binary</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>binary</tag>
+      
+      <tag>pwn</tag>
+      
+      <tag>ctf</tag>
+      
+      <tag>asm</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>离散数学——图论总结归纳</title>
     <link href="/2024/05/30/discrete-mathematics-graph-theory/"/>
     <url>/2024/05/30/discrete-mathematics-graph-theory/</url>
@@ -47,11 +109,11 @@
     
     <tags>
       
+      <tag>pwn</tag>
+      
       <tag>ctf</tag>
       
       <tag>writeup</tag>
-      
-      <tag>pwn</tag>
       
     </tags>
     
@@ -132,11 +194,11 @@
     
     <tags>
       
+      <tag>pwn</tag>
+      
       <tag>ctf</tag>
       
       <tag>writeup</tag>
-      
-      <tag>pwn</tag>
       
       <tag>栈迁移</tag>
       
@@ -163,11 +225,11 @@
     
     <tags>
       
+      <tag>pwn</tag>
+      
       <tag>ctf</tag>
       
       <tag>writeup</tag>
-      
-      <tag>pwn</tag>
       
     </tags>
     
@@ -211,11 +273,11 @@
     
     <tags>
       
+      <tag>pwn</tag>
+      
       <tag>ctf</tag>
       
       <tag>writeup</tag>
-      
-      <tag>pwn</tag>
       
     </tags>
     

@@ -4,6 +4,35 @@
   
   
   <entry>
+    <title>平台上的mahoshojyo（魔法少女）</title>
+    <link href="/2025/03/05/ucas-ctf-pwn-mahoshojyo/"/>
+    <url>/2025/03/05/ucas-ctf-pwn-mahoshojyo/</url>
+    
+    <content type="html"><![CDATA[<h1 id="mahoshojyo">mahoshojyo</h1><h2 id="预分析">预分析</h2><p>用 <code>checksec</code> 检查一下保护，发现 <code>got</code>表可写，除此之外保护全开。</p><p>查看libc版本，是2.23版本。由于本程序是 <code>C++</code>编写，所以还需要一些其他的库（这里花了我好长时间）：</p><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sh">ldd mahoshijio<br><br>    linux-vdso.so.1 (0x00007fff0e5ac000)<br>    libstdc++.so.6 =&gt; /lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007f3fe5f9a000)<br>    libgcc_s.so.1 =&gt; /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007f3fe64de000)<br>    /lib64/ld-linux-x86-64.so.2 (0x00007f3fe6527000)<br>    libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f3fe5da4000)<br>    libm.so.6 =&gt; /lib/x86_64-linux-gnu/libm.so.6 (0x00007f3fe5cbe000)<br></code></pre></td></tr></table></figure><p>这里选择直接上国内源下载 <code>ubuntu16.04</code>对应的库（或者直接docker）</p><p>此外，这个版本的libc没有tcache机制。</p><h2 id="逆向程序">逆向程序</h2><p>发现是一个常规的笔记程序，没有越界读写，但是有 <strong>UAF</strong>漏洞。</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs C"><span class="hljs-type">void</span> __fastcall <span class="hljs-title function_">clear_cards</span><span class="hljs-params">(<span class="hljs-type">char</span> **<span class="hljs-built_in">list</span>, <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> card_num)</span><br>&#123;<br>  <span class="hljs-keyword">if</span> ( card_num &lt;= <span class="hljs-number">79</span> )<br>  &#123;<br>    <span class="hljs-keyword">if</span> ( <span class="hljs-built_in">list</span>[(<span class="hljs-type">int</span>)card_num + <span class="hljs-number">1</span>] )<br>      <span class="hljs-built_in">free</span>(<span class="hljs-built_in">list</span>[(<span class="hljs-type">int</span>)card_num + <span class="hljs-number">1</span>]);    <span class="hljs-comment">//uaf</span><br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure><p>此外，我们发现每一次 <code>malloc</code> 的大小都是固定<code>0x60</code> ，无法设定大小。</p><h2 id="思路">思路</h2><p>可以先用uaf漏洞泄露堆上的地址，再进行堆块重叠，控制某个chunk头，改变其size大小，使之free后进入unsortedbin，从而泄露libc地址(<code>main_arena+88==__malloc_hook+0x10</code>)，之后得知再利用fastbinattack控制 <code>__malloc_hook</code> （fake chunk的地址为<code>__malloc_hook-0x23</code>，以符合fastbin的大小），将onegadget写入hook位置，再用<code>malloc</code> 触发即可 getshell</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>ctf_pwn</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>pwn</tag>
+      
+      <tag>ctf</tag>
+      
+      <tag>writeup</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>virtual_machine-UCATFLAGS2024-writeup</title>
     <link href="/2024/12/11/virtual-machine-UCATFLAGS2024-wp/"/>
     <url>/2024/12/11/virtual-machine-UCATFLAGS2024-wp/</url>

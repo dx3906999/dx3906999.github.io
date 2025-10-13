@@ -4,6 +4,31 @@
   
   
   <entry>
+    <title>傅里叶变换的一些想法</title>
+    <link href="/2025/10/13/some-ideas-about-fourier-transform/"/>
+    <url>/2025/10/13/some-ideas-about-fourier-transform/</url>
+    
+    <content type="html"><![CDATA[<h1 id="关于傅里叶变换的一些理解">关于傅里叶变换的一些理解</h1><h2 id="傅里叶级数">傅里叶级数</h2><p>首先，我们易知 <span class="math inline">\(1, \sin n \omega t , \cosm \omega t\)</span>是正交的</p><p>再观察傅里叶级数的形式</p><p><span class="math display">\[x(t)=\frac{a_0}{2}+\sum\limits_{n=1}^{\infty}a_n\cos n \omega t+ \sum\limits_{n=1}^{\infty} b_n\sin n \omega t\]</span></p><p>所以实际上傅里叶级数是将一个周期函数 <spanclass="math inline">\(x(t)\)</span>以 <span class="math inline">\(1,\sin n \omega t , \cos m \omega t\)</span> 为正交基进行展开，其中 <spanclass="math inline">\(x(t) \in \mathbb{R}^\mathbb{R}\)</span></p><p>所以我们要求的系数就是 <span class="math inline">\(x(t)\)</span> 在<span class="math inline">\(1, \sin n \omega t , \cos m \omegat\)</span>这些基上的投影（注意：这些是正交基，不是标准正交基！）</p><p>以 <span class="math inline">\(\cos n \omega t\)</span>为例，在其方向上的单位向量为</p><p><span class="math display">\[\frac{\cos n \omega t}{\left\vert \cos n \omega t \right\vert}=\frac{\cos n \omega t}{\sqrt{\int_{-\frac{T}{2}}^{\frac{T}{2}}\cos^2 n\omega t \mathrm{d}t}}\]</span></p><p><span class="math inline">\(x(t)\)</span>在 <spanclass="math inline">\(\cos n \omega t\)</span>方向上的投影为</p><p><span class="math display">\[\frac{\boldsymbol{x}(t)\cdot \cos n \omega t}{\left\vert \cos n \omega t\right\vert }=\frac{\int_{-\frac{T}{2}}^{\frac{T}{2}}x(t)\cos n \omega t\mathrm{d}t}{\sqrt{\int_{-\frac{T}{2}}^{\frac{T}{2}}\cos^2 n \omega t\mathrm{d}t}}\]</span></p><div class="note note-warning">            <p>注：上面的 $$ 指的是向量的点积</p>          </div><p>于是，<span class="math inline">\(x(t)\)</span>在 $n t $方向上的项为</p><p><span class="math display">\[\frac{\boldsymbol{x}(t)\cdot \cos n \omega t}{\left\vert \cos n \omega t\right\vert } \frac{\cos n \omega t}{\left\vert \cos n \omega t\right\vert }=\frac{\int_{-\frac{T}{2}}^{\frac{T}{2}}x(t)\cos n \omega t\mathrm{d}t}{\int_{-\frac{T}{2}}^{\frac{T}{2}}\cos^2 n \omega t\mathrm{d}t} \cos n \omega t\]</span></p><p>所以系数 <span class="math inline">\(a_n\)</span> 为</p><p><span class="math display">\[a_n=\frac{\int_{-\frac{T}{2}}^{\frac{T}{2}}x(t)\cos n \omega t\mathrm{d}t}{\int_{-\frac{T}{2}}^{\frac{T}{2}}\cos^2 n \omega t\mathrm{d}t}=\frac{2}{T}\int_{-\frac{T}{2}}^{\frac{T}{2}}x(t)\cos n\omega t \mathrm{d}t\]</span></p><p><span class="math inline">\(b_n\)</span> 和 <spanclass="math inline">\(a_{0}\)</span> 同理</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数理基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>数学</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>四月は君の嘘</title>
     <link href="/2025/03/25/some-notes/"/>
     <url>/2025/03/25/some-notes/</url>

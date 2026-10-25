@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>文章 · dx3906</title>
+    <meta name="description" content="Unstoppable">
+    <link rel="canonical" href="https://dx3906999.github.io/posts/">
+    <link rel="alternate" hreflang="zh" href="https://dx3906999.github.io/posts/"><link rel="alternate" hreflang="en" href="https://dx3906999.github.io/en/posts/">
+    <link rel="alternate" hreflang="x-default" href="https://dx3906999.github.io/posts/">
+    
+    <meta property="og:title" content="文章 · dx3906">
+    <meta property="og:description" content="Unstoppable">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dx3906999.github.io/posts/">
+    <meta property="og:site_name" content="dx3906">
+    
+    
+    
+    <meta name="theme-color" content="#ece8df" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
+    <link rel="alternate" type="application/atom+xml" title="dx3906" href="/atom.xml">
+    <script>(() => {
+  try {
+    const v = localStorage.getItem('apogee.scheme');
+    if (v === 'light' || v === 'dark') document.documentElement.dataset.scheme = v;
+  } catch {}
+  document.documentElement.classList.add('js');
+})();</script>
+    <script>(() => {
+  const key = "dxbe.lang:";
+  const redirectedKey = "dxbe.lang.redirected:";
+  const supported = {"zh":"/","en":"/en/"};
+  try {
+    document.addEventListener('click', (event) => {
+      const node = event.target;
+      if (!(node instanceof Element)) return;
+      const link = node.closest('a[data-language]');
+      if (!link) return;
+      const code = link.getAttribute('data-language');
+      if (code && Object.prototype.hasOwnProperty.call(supported, code)) {
+        try { localStorage.setItem(key, code); } catch {}
+      }
+    });
+    let stored = null;
+    try { stored = localStorage.getItem(key); } catch {}
+    if (stored) {
+      if (true && stored !== "zh" && Object.prototype.hasOwnProperty.call(supported, stored)) {
+        location.replace(supported[stored] + location.search + location.hash);
+      }
+      return;
+    }
+    let redirected = null;
+    try { redirected = sessionStorage.getItem(redirectedKey); } catch {}
+    if (redirected) return;
+    if (!true) return;
+    const home = "/";
+    const path = location.pathname.replace(new RegExp('/+$'), '') || '/';
+    const homePath = home.replace(new RegExp('/+$'), '') || '/';
+    if (path !== homePath) return;
+    const preferred = navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language];
+    for (const value of preferred) {
+      const tag = String(value || '').toLowerCase();
+      const match = Object.keys(supported).find((code) => tag === code || tag.startsWith(code + '-'));
+      if (match) {
+        if (match !== "zh") {
+          try { sessionStorage.setItem(redirectedKey, '1'); } catch {}
+          location.replace(supported[match] + location.search + location.hash);
+        }
+        return;
+      }
+    }
+  } catch {}
+})();</script>
+    <link rel="preload" href="/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724" as="font" type="font/woff2" crossorigin>
+    <style>@font-face{font-family:"Archivo";src:url("/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:"JetBrains Mono";src:url("/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724") format("woff2");font-weight:100 800;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}</style>
+    <link rel="stylesheet" href="/assets/apogee/css/site.css?v=93355c09ce">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"dx3906","description":"Unstoppable","inLanguage":"zh","author":{"@type":"Person","name":"dx3906"},"url":"https://dx3906999.github.io/posts/"}</script>
+  </head>
+  <body class="ap ap--index ap--panel" data-epoch="2026-10-22T01:42:34+08:00">
+    <a class="ap-skip" href="#main">跳到正文</a>
+    <div class="ap-shell">
+      <aside class="ap-rail" id="ap-rail" aria-label="主导航">
+    <div class="ap-rail__inner">
+      <div class="ap-ident">
+        <p class="ap-label"><span class="ap-label__key">STA</span> 1715 <span class="ap-sep">/</span> 中文</p>
+        <a class="ap-ident__title" href="/">dx3906</a>
+        <p class="ap-ident__tag">Unstoppable</p>
+        <span class="ap-ident__plate" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </span>
+      </div>
+      <nav class="ap-nav" aria-label="主导航">
+        <ol><li>
+        <a class="ap-nav__link" href="/">
+          <span class="ap-nav__idx">01</span>
+          <span class="ap-nav__label">首页</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/posts/" aria-current="page">
+          <span class="ap-nav__idx">02</span>
+          <span class="ap-nav__label">文章</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/categories/">
+          <span class="ap-nav__idx">03</span>
+          <span class="ap-nav__label">分类</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/tags/">
+          <span class="ap-nav__idx">04</span>
+          <span class="ap-nav__label">标签</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/archives/">
+          <span class="ap-nav__idx">05</span>
+          <span class="ap-nav__label">归档</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li></ol>
+      </nav>
+      <div class="ap-rail__foot">
+        <div class="ap-met" aria-hidden="true">
+            <span class="ap-label">MET</span>
+            <span class="ap-met__value" data-met>T+ 000:00:00:00</span>
+          </div>
+        <div class="ap-controls">
+          <div class="ap-seg" role="group" aria-label="语言"><a class="ap-seg__opt" href="/posts/" data-language="zh" hreflang="zh" aria-current="true">ZH</a><a class="ap-seg__opt" href="/en/posts/" data-language="en" hreflang="en">EN</a></div>
+          <button class="ap-switch" type="button" data-scheme-toggle aria-label="切换明暗">
+            <span class="ap-switch__track"><span class="ap-switch__knob"></span></span>
+            <span class="ap-switch__label" data-scheme-label>昼</span>
+          </button>
+        </div>
+        <div class="ap-links">
+          <a class="ap-chip" href="https://github.com/dx3906999/" rel="me noopener">GitHub</a>
+          <a class="ap-chip" href="/atom.xml"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M3 3a10 10 0 0 1 10 10M3 7a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/></svg><span>RSS</span></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+      <div class="ap-scrim" data-rail-close aria-hidden="true"></div>
+      <div class="ap-stage">
+        <header class="ap-top">
+    <button class="ap-top__menu" type="button" data-rail-toggle aria-controls="ap-rail" aria-expanded="false" aria-label="打开导航">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="ap-crumb" aria-label="breadcrumb">
+      <a href="/">SYS</a>
+      <span class="ap-sep" aria-hidden="true">/</span>
+      <span aria-current="page">LOG</span>
+    </nav>
+    <form class="ap-query" action="/search/" method="get" role="search">
+      <label class="ap-query__label" for="ap-q">QRY</label>
+      <input id="ap-q" name="q" type="search" placeholder="搜索文章" autocomplete="off">
+      <span class="ap-query__icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5"/></svg></span>
+    </form>
+    <div class="ap-progress" aria-hidden="true"><span data-progress></span></div>
+  </header>
+        <div class="ap-grid">
+          <main id="main" class="ap-main" tabindex="-1">
+            <header class="ap-placard" data-reveal>
+    
+    <div class="ap-placard__head">
+      <p class="ap-label">FLIGHT LOG · VOL 01</p>
+      <p class="ap-label ap-label--dim">010 篇</p>
+    </div>
+    <h1 class="ap-placard__title">文章</h1>
+    
+    <div class="ap-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  </header>
+  <div class="ap-cards"><article class="ap-card" data-reveal style="--i:0">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 26.295</span>
+      <time datetime="2026-10-22T01:42:34+08:00">2026.10.22</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/claude-your-account-is-on-hold/">claude-your-account-is-on-hold</a></h2>
+      <p class="ap-card__sum">claude-your-account-is-on-hold</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">01 分钟</span>
+        
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card" data-reveal style="--i:1">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 25.286</span>
+      <time datetime="2025-10-13T10:49:26+08:00">2025.10.13</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/some-ideas-about-fourier-transform/">傅里叶变换的一些想法</a></h2>
+      <p class="ap-card__sum">现代通信原理重新讲到了傅里叶级数和傅里叶变换，把大一时候的理解记录一下</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">16 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/%E6%95%B0%E5%AD%A6/">数学</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card" data-reveal style="--i:2">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 25.084</span>
+      <time datetime="2025-03-25T10:11:01+08:00">2025.03.25</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/some-missing/">四月は君の嘘</a></h2>
+      <p class="ap-card__sum">马上要到四月了啊</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">03 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/%E9%9A%8F%E8%AE%B0/">随记</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card" data-reveal style="--i:3">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 25.064</span>
+      <time datetime="2025-03-05T21:52:21+08:00">2025.03.05</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/ucas-ctf-pwn-mahoshojyo/">平台上的mahoshojyo（魔法少女）</a></h2>
+      <p class="ap-card__sum">很好的题，使我入门堆</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">02 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card" data-reveal style="--i:4">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 24.346</span>
+      <time datetime="2024-12-11T11:04:05+08:00">2024.12.11</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/virtual-machine-ucatflags2024-wp/">virtual_machine-UCATFLAGS2024-writeup</a></h2>
+      <p class="ap-card__sum">UCATFLAGS2024比赛pwn题目virtual_machine的writeup</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">25 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card" data-reveal style="--i:5">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 24.340</span>
+      <time datetime="2024-12-05T20:58:44+08:00">2024.12.05</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/binary-2024-stack-and-function/">栈与函数</a></h2>
+      <p class="ap-card__sum">2024秋UCASCTF小组binary方向汇编部分讲义之一。</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">05 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/binary/">binary</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/asm/">asm</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card" data-reveal style="--i:6">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 24.340</span>
+      <time datetime="2024-12-05T20:40:15+08:00">2024.12.05</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/binary-2024-introduction-to-asm/">汇编简介</a></h2>
+      <p class="ap-card__sum">2024秋UCASCTF小组binary方向汇编部分讲义之一。在这节课，你将会了解到汇编语言的基本概念，有关寄存器与内存的相关知识，并动手实践，了解汇编语言与c语言的一些对应关系。</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">10 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/binary/">binary</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/asm/">asm</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card ap-card--cover" data-reveal style="--i:7">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 24.151</span>
+      <time datetime="2024-05-30T21:37:17+08:00">2024.05.30</time>
+    </div>
+    <div class="ap-card__cover" aria-hidden="true"><img src="/posts/discrete-mathematics-graph-theory/sljc.png" alt="" loading="lazy" decoding="async"></div>
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/discrete-mathematics-graph-theory/">离散数学——图论总结归纳</a></h2>
+      <p class="ap-card__sum">图这一块概念好多啊QAQ</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">05 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/%E7%A6%BB%E6%95%A3%E6%95%B0%E5%AD%A6/">离散数学</a></li><li><a class="ap-tag" href="/tags/%E6%95%B0%E5%AD%A6/">数学</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card" data-reveal style="--i:8">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 24.109</span>
+      <time datetime="2024-04-18T22:41:58+08:00">2024.04.18</time>
+    </div>
+    
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/ucas-ctf-pwn-guessing-name-1/">Guessing Game 1</a></h2>
+      <p class="ap-card__sum">关于 mprotect 函数的应用（其实完全可以用系统调用）</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">04 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article><article class="ap-card ap-card--cover" data-reveal style="--i:9">
+    <div class="ap-card__rail">
+      <span class="ap-card__no"><span class="ap-label__key">LOG</span> 24.068</span>
+      <time datetime="2024-03-08T14:47:00+08:00">2024.03.08</time>
+    </div>
+    <div class="ap-card__cover" aria-hidden="true"><img src="/posts/how-to-use-tikz-in-your-blog/tikz_show.png" alt="" loading="lazy" decoding="async"></div>
+    <div class="ap-card__body">
+      <h2 class="ap-card__title"><a href="/posts/how-to-use-tikz-in-your-blog/">解决vscode无法对markdown源码中新定义语言(tikz)高亮的问题</a></h2>
+      <p class="ap-card__sum">一次vscode编辑器代码高亮编辑</p>
+      <div class="ap-card__meta">
+        <span class="ap-card__read">01 分钟</span>
+        <ul class="ap-tags"><li><a class="ap-tag" href="/tags/hexo/">hexo</a></li><li><a class="ap-tag" href="/tags/tikz/">tikz</a></li><li><a class="ap-tag" href="/tags/vscode/">vscode</a></li></ul>
+      </div>
+    </div>
+    <span class="ap-card__go" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+  </article></div>
+  <nav class="ap-pager" aria-label="分页">
+    <span class="ap-btn" aria-disabled="true">上一页</span>
+    <ol class="ap-pager__pages"><li><a href="/posts/" aria-current="page">01</a></li><li><a href="/posts/page/2/">02</a></li></ol>
+    <a class="ap-btn" href="/posts/page/2/" rel="next">下一页</a>
+  </nav>
+          </main>
+          <aside class="ap-panel" aria-label="遥测"><section class="ap-module">
+    <h2 class="ap-module__head"><span>最近日志</span><span class="ap-module__count">10</span></h2>
+    <ol class="ap-recent"><li>
+        <a href="/posts/claude-your-account-is-on-hold/">
+          <span class="ap-recent__code">26.295</span>
+          <span class="ap-recent__title">claude-your-account-is-on-hold</span>
+        </a>
+      </li><li>
+        <a href="/posts/some-ideas-about-fourier-transform/">
+          <span class="ap-recent__code">25.286</span>
+          <span class="ap-recent__title">傅里叶变换的一些想法</span>
+        </a>
+      </li><li>
+        <a href="/posts/some-missing/">
+          <span class="ap-recent__code">25.084</span>
+          <span class="ap-recent__title">四月は君の嘘</span>
+        </a>
+      </li><li>
+        <a href="/posts/ucas-ctf-pwn-mahoshojyo/">
+          <span class="ap-recent__code">25.064</span>
+          <span class="ap-recent__title">平台上的mahoshojyo（魔法少女）</span>
+        </a>
+      </li><li>
+        <a href="/posts/virtual-machine-ucatflags2024-wp/">
+          <span class="ap-recent__code">24.346</span>
+          <span class="ap-recent__title">virtual_machine-UCATFLAGS2024-writeup</span>
+        </a>
+      </li></ol>
+  </section><section class="ap-module">
+    <h2 class="ap-module__head"><span>标签</span><span class="ap-module__count">11</span></h2>
+    <ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/%E6%95%B0%E5%AD%A6/">数学</a></li><li><a class="ap-tag" href="/tags/binary/">binary</a></li><li><a class="ap-tag" href="/tags/asm/">asm</a></li><li><a class="ap-tag" href="/tags/%E9%9A%8F%E8%AE%B0/">随记</a></li><li><a class="ap-tag" href="/tags/%E7%A6%BB%E6%95%A3%E6%95%B0%E5%AD%A6/">离散数学</a></li><li><a class="ap-tag" href="/tags/hexo/">hexo</a></li><li><a class="ap-tag" href="/tags/tikz/">tikz</a></li><li><a class="ap-tag" href="/tags/vscode/">vscode</a></li></ul>
+  </section></aside>
+        </div>
+        <footer class="ap-foot">
+    <div class="ap-stripe ap-stripe--thin" aria-hidden="true"></div>
+    <div class="ap-foot__plate">
+      <dl class="ap-foot__grid">
+        <div><dt>OPR</dt><dd>dx3906</dd></div>
+        <div><dt>YR</dt><dd>2026</dd></div>
+        <div><dt>CODE</dt><dd>MIT</dd></div>
+        <div><dt>TEXT</dt><dd>CC BY-NC-SA 4.0</dd></div>
+      </dl>
+      <p class="ap-foot__note">
+        <span>© 2026 dx3906</span>
+        <span class="ap-sep" aria-hidden="true">·</span>
+        <span>由 dxbe 生成</span>
+        <span class="ap-sep" aria-hidden="true">·</span><a href="https://github.com/dx3906999/dx3906999.github.io" rel="noopener">查看源码</a>
+      </p>
+      <p class="ap-foot__serial" aria-hidden="true">SN-2026-ZH-0001 <span>NO STEP</span></p>
+    </div>
+  </footer>
+      </div>
+    </div>
+    <script type="module" src="/assets/apogee/js/site.js?v=cd7c505ced"></script>
+    
+  </body>
+</html>

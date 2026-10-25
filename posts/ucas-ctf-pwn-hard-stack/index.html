@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>记一道校内pwn题——hard_stack · dx3906</title>
+    <meta name="description" content="日常刷刷题">
+    <link rel="canonical" href="https://dx3906999.github.io/posts/ucas-ctf-pwn-hard-stack/">
+    <link rel="alternate" hreflang="zh" href="https://dx3906999.github.io/posts/ucas-ctf-pwn-hard-stack/">
+    <link rel="alternate" hreflang="x-default" href="https://dx3906999.github.io/posts/ucas-ctf-pwn-hard-stack/">
+    
+    <meta property="og:title" content="记一道校内pwn题——hard_stack · dx3906">
+    <meta property="og:description" content="日常刷刷题">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://dx3906999.github.io/posts/ucas-ctf-pwn-hard-stack/">
+    <meta property="og:site_name" content="dx3906">
+    
+    <meta property="article:published_time" content="2024-02-25T13:09:26.000Z">
+    <meta property="article:modified_time" content="2024-02-25T13:09:26.000Z">
+    <meta name="theme-color" content="#ece8df" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
+    <link rel="alternate" type="application/atom+xml" title="dx3906" href="/atom.xml">
+    <script>(() => {
+  try {
+    const v = localStorage.getItem('apogee.scheme');
+    if (v === 'light' || v === 'dark') document.documentElement.dataset.scheme = v;
+  } catch {}
+  document.documentElement.classList.add('js');
+})();</script>
+    <script>(() => {
+  const key = "dxbe.lang:";
+  const redirectedKey = "dxbe.lang.redirected:";
+  const supported = {"zh":"/","en":"/en/"};
+  try {
+    document.addEventListener('click', (event) => {
+      const node = event.target;
+      if (!(node instanceof Element)) return;
+      const link = node.closest('a[data-language]');
+      if (!link) return;
+      const code = link.getAttribute('data-language');
+      if (code && Object.prototype.hasOwnProperty.call(supported, code)) {
+        try { localStorage.setItem(key, code); } catch {}
+      }
+    });
+    let stored = null;
+    try { stored = localStorage.getItem(key); } catch {}
+    if (stored) {
+      if (true && stored !== "zh" && Object.prototype.hasOwnProperty.call(supported, stored)) {
+        location.replace(supported[stored] + location.search + location.hash);
+      }
+      return;
+    }
+    let redirected = null;
+    try { redirected = sessionStorage.getItem(redirectedKey); } catch {}
+    if (redirected) return;
+    if (!true) return;
+    const home = "/";
+    const path = location.pathname.replace(new RegExp('/+$'), '') || '/';
+    const homePath = home.replace(new RegExp('/+$'), '') || '/';
+    if (path !== homePath) return;
+    const preferred = navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language];
+    for (const value of preferred) {
+      const tag = String(value || '').toLowerCase();
+      const match = Object.keys(supported).find((code) => tag === code || tag.startsWith(code + '-'));
+      if (match) {
+        if (match !== "zh") {
+          try { sessionStorage.setItem(redirectedKey, '1'); } catch {}
+          location.replace(supported[match] + location.search + location.hash);
+        }
+        return;
+      }
+    }
+  } catch {}
+})();</script>
+    <link rel="preload" href="/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724" as="font" type="font/woff2" crossorigin>
+    <style>@font-face{font-family:"Archivo";src:url("/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:"JetBrains Mono";src:url("/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724") format("woff2");font-weight:100 800;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}</style>
+    <link rel="stylesheet" href="/assets/apogee/css/site.css?v=93355c09ce">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"记一道校内pwn题——hard_stack","description":"日常刷刷题","datePublished":"2024-02-25T13:09:26.000Z","dateModified":"2024-02-25T13:09:26.000Z","inLanguage":"zh","author":{"@type":"Person","name":"dx3906"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://dx3906999.github.io/posts/ucas-ctf-pwn-hard-stack/"},"url":"https://dx3906999.github.io/posts/ucas-ctf-pwn-hard-stack/","keywords":"ctf, writeup, pwn"}</script>
+  </head>
+  <body class="ap ap--post ap--panel" data-epoch="2024-02-25T21:09:26+08:00">
+    <a class="ap-skip" href="#main">跳到正文</a>
+    <div class="ap-shell">
+      <aside class="ap-rail" id="ap-rail" aria-label="主导航">
+    <div class="ap-rail__inner">
+      <div class="ap-ident">
+        <p class="ap-label"><span class="ap-label__key">STA</span> 1715 <span class="ap-sep">/</span> 中文</p>
+        <a class="ap-ident__title" href="/">dx3906</a>
+        <p class="ap-ident__tag">Unstoppable</p>
+        <span class="ap-ident__plate" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </span>
+      </div>
+      <nav class="ap-nav" aria-label="主导航">
+        <ol><li>
+        <a class="ap-nav__link" href="/">
+          <span class="ap-nav__idx">01</span>
+          <span class="ap-nav__label">首页</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/posts/" aria-current="page">
+          <span class="ap-nav__idx">02</span>
+          <span class="ap-nav__label">文章</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/categories/">
+          <span class="ap-nav__idx">03</span>
+          <span class="ap-nav__label">分类</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/tags/">
+          <span class="ap-nav__idx">04</span>
+          <span class="ap-nav__label">标签</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/archives/">
+          <span class="ap-nav__idx">05</span>
+          <span class="ap-nav__label">归档</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li></ol>
+      </nav>
+      <div class="ap-rail__foot">
+        <div class="ap-met" aria-hidden="true">
+            <span class="ap-label">MET</span>
+            <span class="ap-met__value" data-met>T+ 000:00:00:00</span>
+          </div>
+        <div class="ap-controls">
+          <div class="ap-seg" role="group" aria-label="语言"><a class="ap-seg__opt" href="/posts/ucas-ctf-pwn-hard-stack/" data-language="zh" hreflang="zh" aria-current="true">ZH</a><a class="ap-seg__opt" href="/en/" data-language="en" hreflang="en">EN</a></div>
+          <button class="ap-switch" type="button" data-scheme-toggle aria-label="切换明暗">
+            <span class="ap-switch__track"><span class="ap-switch__knob"></span></span>
+            <span class="ap-switch__label" data-scheme-label>昼</span>
+          </button>
+        </div>
+        <div class="ap-links">
+          <a class="ap-chip" href="https://github.com/dx3906999/" rel="me noopener">GitHub</a>
+          <a class="ap-chip" href="/atom.xml"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M3 3a10 10 0 0 1 10 10M3 7a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/></svg><span>RSS</span></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+      <div class="ap-scrim" data-rail-close aria-hidden="true"></div>
+      <div class="ap-stage">
+        <header class="ap-top">
+    <button class="ap-top__menu" type="button" data-rail-toggle aria-controls="ap-rail" aria-expanded="false" aria-label="打开导航">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="ap-crumb" aria-label="breadcrumb">
+      <a href="/">SYS</a>
+      <span class="ap-sep" aria-hidden="true">/</span>
+      <a href="/archives/">LOG</a><span class="ap-sep" aria-hidden="true">/</span><span aria-current="page">24.056</span>
+    </nav>
+    <form class="ap-query" action="/search/" method="get" role="search">
+      <label class="ap-query__label" for="ap-q">QRY</label>
+      <input id="ap-q" name="q" type="search" placeholder="搜索文章" autocomplete="off">
+      <span class="ap-query__icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5"/></svg></span>
+    </form>
+    <div class="ap-progress" aria-hidden="true"><span data-progress></span></div>
+  </header>
+        <div class="ap-grid">
+          <main id="main" class="ap-main" tabindex="-1">
+            <article class="ap-article"
+      data-pagefind-body
+      data-pagefind-filter="lang:zh"
+      data-pagefind-meta="title:记一道校内pwn题——hard_stack">
+    <header class="ap-dossier" data-reveal>
+      <div class="ap-dossier__bar">
+        <span class="ap-label"><span class="ap-label__key">LOG</span> 24.056</span>
+        <span class="ap-label ap-label--dim">STA 8954</span>
+        <span class="ap-hazard" aria-hidden="true"></span>
+      </div>
+      
+      <h1 class="ap-dossier__title">记一道校内pwn题——hard_stack</h1>
+      <p class="ap-dossier__sum">日常刷刷题</p>
+      <dl class="ap-spec">
+        <div><dt>发布</dt><dd><time datetime="2024-02-25T21:09:26+08:00">2024.02.25</time></dd></div>
+        
+        <div><dt>阅读</dt><dd>05 分钟</dd></div>
+        <div><dt>语言</dt><dd>ZH</dd></div>
+        <div><dt>分类</dt><dd><a href="/categories/ctf-pwn/">ctf_pwn</a></dd></div>
+      </dl>
+      <div class="ap-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    </header>
+    <div class="ap-prose"><p>日常刷刷题</p>
+<p>先 <code>checksec</code> 一下</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">┌──(kali㉿helloeveryone</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)-[~/ctf/pwn/q20_hardstack]</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">└─$</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> checksec</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --file=hard_stack</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">] </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'/home/kali/ctf/pwn/q20_hardstack/hard_stack'</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    Arch:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">     amd64-64-little</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    RELRO:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    Full</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> RELRO</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    Stack:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    No</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> canary</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> found</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    NX:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">       NX</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> enabled</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    PIE:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">      PIE</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> enabled</span></span></code></pre>
+<p>没有金丝雀, 地址随机化, 用户栈不可执行</p>
+<p>再丢进ida看眼，<code>F5</code>一下</p>
+<p>main:</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> __cdecl </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">main</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">int</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> argc</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> **</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">argv</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> **</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">envp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  FILE </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">stream;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // [rsp+18h] [rbp-8h]</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">  setvbuf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(stdout, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">LL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">LL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  stream </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> fopen</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"flag.txt"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"r"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ( </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">!</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">stream )</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  {</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    puts</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"Something wrong with flag file."</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    exit</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  }</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">  fgets</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(s, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, stream);</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//将字符串读到s中</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">  sub_400acd</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">();</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">  puts</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"Bye~"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span></code></pre>
+<p>sub_400acd:</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">ssize_t</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> sub_400acd</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  ssize_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> result;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // rax</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  char</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> buf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">45</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // [rsp+Fh] [rbp-31h] BYREF</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> i;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // [rsp+3Ch] [rbp-4h]</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">  puts</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"Who are you?"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ( i </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">; ; </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">++</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">i )</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    result </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> read</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, buf, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">uLL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                //一次从缓冲区读一个字节</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ( result </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> )</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      break</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    result </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">unsigned</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> __int8)</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">buf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ( </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">buf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">==</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> '</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> )</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      break</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">    buf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[i </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> buf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                        // 漏洞:只要没有读入换行符或EOF就会一直读，造成栈溢出</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  }</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> result;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                // 可以劫持程序流程</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span></code></pre>
+<p>在ida里看看其他函数</p>
+<p>找到一个获得flag的函数 <code>sub_40076d</code></p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">int</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> sub_40067d</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  return</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> puts</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(s);</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                               //s即为刚刚读取flag的字符串地址</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span></code></pre>
+<p>现在可以分析一下漏洞函数 <code>sub_400acd</code> 的栈了</p>
+<pre><code>-0000000000000040                 db ? ; undefined
+-000000000000003F                 db ? ; undefined
+-000000000000003E                 db ? ; undefined
+-000000000000003D                 db ? ; undefined
+-000000000000003C                 db ? ; undefined
+-000000000000003B                 db ? ; undefined
+-000000000000003A                 db ? ; undefined
+-0000000000000039                 db ? ; undefined
+-0000000000000038                 db ? ; undefined
+-0000000000000037                 db ? ; undefined
+-0000000000000036                 db ? ; undefined
+-0000000000000035                 db ? ; undefined
+-0000000000000034                 db ? ; undefined
+-0000000000000033                 db ? ; undefined
+-0000000000000032                 db ? ; undefined
+-0000000000000031 buf             db ?
+-0000000000000030 var_30          db ?
+-000000000000002F                 db ? ; undefined
+-000000000000002E                 db ? ; undefined
+-000000000000002D                 db ? ; undefined
+-000000000000002C                 db ? ; undefined
+-000000000000002B                 db ? ; undefined
+-000000000000002A                 db ? ; undefined
+-0000000000000029                 db ? ; undefined
+-0000000000000028                 db ? ; undefined
+-0000000000000027                 db ? ; undefined
+-0000000000000026                 db ? ; undefined
+-0000000000000025                 db ? ; undefined
+-0000000000000024                 db ? ; undefined
+-0000000000000023                 db ? ; undefined
+-0000000000000022                 db ? ; undefined
+-0000000000000021                 db ? ; undefined
+-0000000000000020                 db ? ; undefined
+-000000000000001F                 db ? ; undefined
+-000000000000001E                 db ? ; undefined
+-000000000000001D                 db ? ; undefined
+-000000000000001C                 db ? ; undefined
+-000000000000001B                 db ? ; undefined
+-000000000000001A                 db ? ; undefined
+-0000000000000019                 db ? ; undefined
+-0000000000000018                 db ? ; undefined
+-0000000000000017                 db ? ; undefined
+-0000000000000016                 db ? ; undefined
+-0000000000000015                 db ? ; undefined
+-0000000000000014                 db ? ; undefined
+-0000000000000013                 db ? ; undefined
+-0000000000000012                 db ? ; undefined
+-0000000000000011                 db ? ; undefined
+-0000000000000010                 db ? ; undefined
+-000000000000000F                 db ? ; undefined
+-000000000000000E                 db ? ; undefined
+-000000000000000D                 db ? ; undefined
+-000000000000000C                 db ? ; undefined
+-000000000000000B                 db ? ; undefined
+-000000000000000A                 db ? ; undefined
+-0000000000000009                 db ? ; undefined
+-0000000000000008                 db ? ; undefined
+-0000000000000007                 db ? ; undefined
+-0000000000000006                 db ? ; undefined
+-0000000000000005                 db ? ; undefined
+-0000000000000004 var_4           dd ?
++0000000000000000  s              db 8 dup(?)
++0000000000000008  r              db 8 dup(?)
++0000000000000010
++0000000000000010 ; end of stack variables
+</code></pre>
+<p><code>buf</code> 和 <code>var_30</code> 占45字节，属于 <code>buf[45]</code> , <code>var_4</code> 则是变量 <code>i</code></p>
+<p>由此，可以有一种思路: 将 <code>buf</code> 溢出覆盖 <code>i</code> 实现栈上任意写</p>
+<p>构造payload:</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">payload</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'a'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">44</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\x37</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\x42</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'</span></span></code></pre>
+<p>前44个a是垃圾占位字符，填充 <code>-0000000000000030</code> 到 <code>-0000000000000005</code> (ps:因为 <code>-0000000000000031</code> 总是储存当前字符)</p>
+<p>后面写一个 <code>0x37</code> , 即将 <code>i</code> 改成55。这是考虑到for循环后要有 <code>i++</code> , 即下一次写入的地址是 <code>buf[(i++)+1]</code> , 此地址即为 <code>buf[57]</code> = <code>-0x31+0x39=0x8</code> , 就是返回地址的第一个字节</p>
+<p>下面解释payload最后一字节:</p>
+<p>首先，地址随机化只是进行页的随机化，一页的大小是 <code>0x1000</code> , 也就是说同一页上地址的后三位不会改变。</p>
+<p>其次，小端储存，是指以字节为单位，低数位储存在低地址，高数位储存在高地址。返回地址是 <code>call    _sub_400acd</code> 指令的下一条，地址即 <code>0x00000000000008D8</code> , 所以我们最后是将上述地址覆盖成 <code>0x0000000000000842</code> , 这正是 <code>sub_40067d()</code> 的地址。这样我们就把程序劫持到该函数上打印flag</p>
+<p>PS: 由于金丝雀是在栈上变量之后， <code>rbp</code> 和返回地址之前，我们可以通过数组索引避开金丝雀实现栈溢出，所以本题开了 <code>canary</code> 也可以做</p></div>
+    <footer class="ap-article__foot">
+      <div class="ap-article__tags"><span class="ap-label">标签</span><ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li></ul></div>
+      <nav class="ap-route" aria-label="航线">
+        <span class="ap-route__btn ap-route__btn--void" aria-hidden="true"><span class="ap-label">— —</span></span>
+        <a class="ap-route__btn ap-route__btn--next" href="/posts/select-course-ucas/" rel="next"><span class="ap-label">下一篇 <svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="ap-route__title">基于油猴的sep选课脚本安装使用</span></a>
+      </nav>
+    </footer>
+  </article>
+          </main>
+          <aside class="ap-panel" aria-label="遥测"><section class="ap-module ap-module--gauge" aria-hidden="true">
+    <div class="ap-gauge">
+      <div class="ap-gauge__head">
+        <span class="ap-label">ALT</span>
+        <span class="ap-gauge__value"><span data-progress-text>000</span><small>%</small></span>
+        <span class="ap-gauge__sec" data-gauge-sec></span>
+      </div>
+      <div class="ap-gauge__track" data-progress-v>
+        <span class="ap-gauge__fill"></span>
+        <span class="ap-gauge__mark"></span>
+      </div>
+      <div class="ap-gauge__scale"><span style="--at:0%">0</span><span style="--at:25%">25</span><span style="--at:50%">50</span><span style="--at:75%">75</span><span style="--at:100%">100</span></div>
+    </div>
+  </section><section class="ap-module">
+    <h2 class="ap-module__head"><span>本文标签</span><span class="ap-module__count">03</span></h2>
+    <ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li></ul>
+  </section></aside>
+        </div>
+        <footer class="ap-foot">
+    <div class="ap-stripe ap-stripe--thin" aria-hidden="true"></div>
+    <div class="ap-foot__plate">
+      <dl class="ap-foot__grid">
+        <div><dt>OPR</dt><dd>dx3906</dd></div>
+        <div><dt>YR</dt><dd>2026</dd></div>
+        <div><dt>CODE</dt><dd>MIT</dd></div>
+        <div><dt>TEXT</dt><dd>CC BY-NC-SA 4.0</dd></div>
+      </dl>
+      <p class="ap-foot__note">
+        <span>© 2026 dx3906</span>
+        <span class="ap-sep" aria-hidden="true">·</span>
+        <span>由 dxbe 生成</span>
+        <span class="ap-sep" aria-hidden="true">·</span><a href="https://github.com/dx3906999/dx3906999.github.io" rel="noopener">查看源码</a>
+      </p>
+      <p class="ap-foot__serial" aria-hidden="true">SN-2026-ZH-0001 <span>NO STEP</span></p>
+    </div>
+  </footer>
+      </div>
+    </div>
+    <script type="module" src="/assets/apogee/js/site.js?v=cd7c505ced"></script>
+    
+  </body>
+</html>

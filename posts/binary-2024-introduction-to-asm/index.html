@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>汇编简介 · dx3906</title>
+    <meta name="description" content="2024秋UCASCTF小组binary方向汇编部分讲义之一。在这节课，你将会了解到汇编语言的基本概念，有关寄存器与内存的相关知识，并动手实践，了解汇编语言与c语言的一些对应关系。">
+    <link rel="canonical" href="https://dx3906999.github.io/posts/binary-2024-introduction-to-asm/">
+    <link rel="alternate" hreflang="zh" href="https://dx3906999.github.io/posts/binary-2024-introduction-to-asm/">
+    <link rel="alternate" hreflang="x-default" href="https://dx3906999.github.io/posts/binary-2024-introduction-to-asm/">
+    
+    <meta property="og:title" content="汇编简介 · dx3906">
+    <meta property="og:description" content="2024秋UCASCTF小组binary方向汇编部分讲义之一。在这节课，你将会了解到汇编语言的基本概念，有关寄存器与内存的相关知识，并动手实践，了解汇编语言与c语言的一些对应关系。">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://dx3906999.github.io/posts/binary-2024-introduction-to-asm/">
+    <meta property="og:site_name" content="dx3906">
+    
+    <meta property="article:published_time" content="2024-12-05T12:40:15.000Z">
+    <meta property="article:modified_time" content="2024-12-05T12:40:15.000Z">
+    <meta name="theme-color" content="#ece8df" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
+    <link rel="alternate" type="application/atom+xml" title="dx3906" href="/atom.xml">
+    <script>(() => {
+  try {
+    const v = localStorage.getItem('apogee.scheme');
+    if (v === 'light' || v === 'dark') document.documentElement.dataset.scheme = v;
+  } catch {}
+  document.documentElement.classList.add('js');
+})();</script>
+    <script>(() => {
+  const key = "dxbe.lang:";
+  const redirectedKey = "dxbe.lang.redirected:";
+  const supported = {"zh":"/","en":"/en/"};
+  try {
+    document.addEventListener('click', (event) => {
+      const node = event.target;
+      if (!(node instanceof Element)) return;
+      const link = node.closest('a[data-language]');
+      if (!link) return;
+      const code = link.getAttribute('data-language');
+      if (code && Object.prototype.hasOwnProperty.call(supported, code)) {
+        try { localStorage.setItem(key, code); } catch {}
+      }
+    });
+    let stored = null;
+    try { stored = localStorage.getItem(key); } catch {}
+    if (stored) {
+      if (true && stored !== "zh" && Object.prototype.hasOwnProperty.call(supported, stored)) {
+        location.replace(supported[stored] + location.search + location.hash);
+      }
+      return;
+    }
+    let redirected = null;
+    try { redirected = sessionStorage.getItem(redirectedKey); } catch {}
+    if (redirected) return;
+    if (!true) return;
+    const home = "/";
+    const path = location.pathname.replace(new RegExp('/+$'), '') || '/';
+    const homePath = home.replace(new RegExp('/+$'), '') || '/';
+    if (path !== homePath) return;
+    const preferred = navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language];
+    for (const value of preferred) {
+      const tag = String(value || '').toLowerCase();
+      const match = Object.keys(supported).find((code) => tag === code || tag.startsWith(code + '-'));
+      if (match) {
+        if (match !== "zh") {
+          try { sessionStorage.setItem(redirectedKey, '1'); } catch {}
+          location.replace(supported[match] + location.search + location.hash);
+        }
+        return;
+      }
+    }
+  } catch {}
+})();</script>
+    <link rel="preload" href="/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724" as="font" type="font/woff2" crossorigin>
+    <style>@font-face{font-family:"Archivo";src:url("/assets/apogee/fonts/archivo-latin-standard.woff2?v=e3a28eade2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:"JetBrains Mono";src:url("/assets/apogee/fonts/jetbrains-mono-latin-wght.woff2?v=18be452724") format("woff2");font-weight:100 800;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}</style>
+    <link rel="stylesheet" href="/assets/apogee/css/site.css?v=93355c09ce">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"汇编简介","description":"2024秋UCASCTF小组binary方向汇编部分讲义之一。在这节课，你将会了解到汇编语言的基本概念，有关寄存器与内存的相关知识，并动手实践，了解汇编语言与c语言的一些对应关系。","datePublished":"2024-12-05T12:40:15.000Z","dateModified":"2024-12-05T12:40:15.000Z","inLanguage":"zh","author":{"@type":"Person","name":"dx3906"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://dx3906999.github.io/posts/binary-2024-introduction-to-asm/"},"url":"https://dx3906999.github.io/posts/binary-2024-introduction-to-asm/","keywords":"binary, pwn, ctf, asm"}</script>
+  </head>
+  <body class="ap ap--post ap--panel" data-epoch="2024-12-05T20:40:15+08:00">
+    <a class="ap-skip" href="#main">跳到正文</a>
+    <div class="ap-shell">
+      <aside class="ap-rail" id="ap-rail" aria-label="主导航">
+    <div class="ap-rail__inner">
+      <div class="ap-ident">
+        <p class="ap-label"><span class="ap-label__key">STA</span> 1715 <span class="ap-sep">/</span> 中文</p>
+        <a class="ap-ident__title" href="/">dx3906</a>
+        <p class="ap-ident__tag">Unstoppable</p>
+        <span class="ap-ident__plate" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </span>
+      </div>
+      <nav class="ap-nav" aria-label="主导航">
+        <ol><li>
+        <a class="ap-nav__link" href="/">
+          <span class="ap-nav__idx">01</span>
+          <span class="ap-nav__label">首页</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/posts/" aria-current="page">
+          <span class="ap-nav__idx">02</span>
+          <span class="ap-nav__label">文章</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/categories/">
+          <span class="ap-nav__idx">03</span>
+          <span class="ap-nav__label">分类</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/tags/">
+          <span class="ap-nav__idx">04</span>
+          <span class="ap-nav__label">标签</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li><li>
+        <a class="ap-nav__link" href="/archives/">
+          <span class="ap-nav__idx">05</span>
+          <span class="ap-nav__label">归档</span>
+          <span class="ap-nav__tick" aria-hidden="true"></span>
+        </a>
+      </li></ol>
+      </nav>
+      <div class="ap-rail__foot">
+        <div class="ap-met" aria-hidden="true">
+            <span class="ap-label">MET</span>
+            <span class="ap-met__value" data-met>T+ 000:00:00:00</span>
+          </div>
+        <div class="ap-controls">
+          <div class="ap-seg" role="group" aria-label="语言"><a class="ap-seg__opt" href="/posts/binary-2024-introduction-to-asm/" data-language="zh" hreflang="zh" aria-current="true">ZH</a><a class="ap-seg__opt" href="/en/" data-language="en" hreflang="en">EN</a></div>
+          <button class="ap-switch" type="button" data-scheme-toggle aria-label="切换明暗">
+            <span class="ap-switch__track"><span class="ap-switch__knob"></span></span>
+            <span class="ap-switch__label" data-scheme-label>昼</span>
+          </button>
+        </div>
+        <div class="ap-links">
+          <a class="ap-chip" href="https://github.com/dx3906999/" rel="me noopener">GitHub</a>
+          <a class="ap-chip" href="/atom.xml"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M3 3a10 10 0 0 1 10 10M3 7a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/></svg><span>RSS</span></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+      <div class="ap-scrim" data-rail-close aria-hidden="true"></div>
+      <div class="ap-stage">
+        <header class="ap-top">
+    <button class="ap-top__menu" type="button" data-rail-toggle aria-controls="ap-rail" aria-expanded="false" aria-label="打开导航">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="ap-crumb" aria-label="breadcrumb">
+      <a href="/">SYS</a>
+      <span class="ap-sep" aria-hidden="true">/</span>
+      <a href="/archives/">LOG</a><span class="ap-sep" aria-hidden="true">/</span><span aria-current="page">24.340</span>
+    </nav>
+    <form class="ap-query" action="/search/" method="get" role="search">
+      <label class="ap-query__label" for="ap-q">QRY</label>
+      <input id="ap-q" name="q" type="search" placeholder="搜索文章" autocomplete="off">
+      <span class="ap-query__icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5"/></svg></span>
+    </form>
+    <div class="ap-progress" aria-hidden="true"><span data-progress></span></div>
+  </header>
+        <div class="ap-grid">
+          <main id="main" class="ap-main" tabindex="-1">
+            <article class="ap-article"
+      data-pagefind-body
+      data-pagefind-filter="lang:zh"
+      data-pagefind-meta="title:汇编简介">
+    <header class="ap-dossier" data-reveal>
+      <div class="ap-dossier__bar">
+        <span class="ap-label"><span class="ap-label__key">LOG</span> 24.340</span>
+        <span class="ap-label ap-label--dim">STA 6934</span>
+        <span class="ap-hazard" aria-hidden="true"></span>
+      </div>
+      
+      <h1 class="ap-dossier__title">汇编简介</h1>
+      <p class="ap-dossier__sum">2024秋UCASCTF小组binary方向汇编部分讲义之一。在这节课，你将会了解到汇编语言的基本概念，有关寄存器与内存的相关知识，并动手实践，了解汇编语言与c语言的一些对应关系。</p>
+      <dl class="ap-spec">
+        <div><dt>发布</dt><dd><time datetime="2024-12-05T20:40:15+08:00">2024.12.05</time></dd></div>
+        
+        <div><dt>阅读</dt><dd>10 分钟</dd></div>
+        <div><dt>语言</dt><dd>ZH</dd></div>
+        <div><dt>分类</dt><dd><a href="/categories/binary/">binary</a></dd></div>
+      </dl>
+      <div class="ap-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    </header>
+    <div class="ap-prose"><h3 id="基本概念"><a class="heading-anchor" href="#基本概念">基本概念</a></h3>
+<p><strong>指令</strong>：即控制cpu的指令，相当于一个或一串对cpu有意义的字节。不同设计的cpu会有不同的指令架构（这与硬件有关）。</p>
+<p><strong>机器码</strong>：cpu能直接执行的一个或一串字节。</p>
+<p><strong>汇编语言</strong>：是机器码的助记符。</p>
+<p><strong>寄存器</strong>：在cpu中的、可以快速访问的少量存储器。</p>
+<p>不同的cpu有不同的指令集，对应的汇编语言也有不同的语法，使用的寄存器也不同。（比如intel的x86、x64架构，ARMv8架构，mips架构，在接下来的课程中，我们着重于x86、x64架构的汇编讲解）</p>
+<p>同一架构下汇编语言的语法也可能有所不同，比如x64有AT&#x26;T语法、intel风格语法。此外，不同编译器之间也有一些较小的差异，比如masm和nasm。</p>
+<p>下面给出上面四个概念的对应例子：</p>
+<p><strong>intel</strong>语法风格</p>
+<pre><code class="language-nasm">push rbp    ; 0x55
+nop         ; 0x90
+</code></pre>
+<p>上面的汇编语言片段中，<code>push rbp</code> 是一条汇编指令，它对应的机器码是 <code>0x55</code> ，它的含义是将 <code>rbp</code> 寄存器中的值压入栈中。</p>
+<p><strong>AT&#x26;T</strong>语法风格</p>
+<pre><code class="language-assembler">pushq %rbp
+nop
+</code></pre>
+<p>基于方便的理由，我们这节课暂且以nasm编译器、intel风格语法为例编写汇编程序。</p>
+<h3 id="nasm编译器的安装和使用"><a class="heading-anchor" href="#nasm编译器的安装和使用">nasm编译器的安装和使用</a></h3>
+<ul>
+<li>
+<p>ubuntu:</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">sudo</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> apt</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> install</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nasm</span></span></code></pre>
+</li>
+<li>
+<p>windows:</p>
+<p><a href="https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win64/">官网下载地址</a></p>
+<p>下载后添加到系统PATH环境变量</p>
+</li>
+</ul>
+<p>检查 ： <code>nasm --version</code></p>
+<p>新建一个文件 <code>hello.asm</code> ，输入如下内容：</p>
+<pre><code class="language-nasm">; Intel 格式
+; Hello.asm
+section .data           ; 数据段声明
+          msg db "Hello World!",0xA   ; 要输出的字符串
+          len equ $ -msg              ; 字符串长度
+section .text                         ; 代码段声明
+global _start                         ; 指定入口函数
+_start:                               ; 在屏幕上显示一个字符串
+          mov edx, len                ; 参数三：字符串长度
+          mov ecx, msg                ; 参数二：要显示的字符串
+          mov ebx, 1                  ; 参数一：文件描述符（stdout）
+          mov eax, 4                  ; 系统调用号（sys_write）
+          int 0x80                    ; 调用内核功能
+                                      ; 退出程序
+          mov ebx, 1                  ; 参数一：退出代码
+          mov eax, 1                  ; 系统调用号（sys_exit）
+          int 0x80                    ; 调用内核功能
+</code></pre>
+<p>保存退出后，在终端输入</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">nasm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> elf64</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> helloworld.asm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> hello.o</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ld</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> hello.o</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> hello</span></span></code></pre>
+<p>即可生成可执行文件 <code>hello</code>  ，执行它，将会打印一条helloworld</p>
+<h3 id="认识寄存器"><a class="heading-anchor" href="#认识寄存器">认识寄存器</a></h3>
+<p>在x86架构中，寄存器通常分为以下几类：</p>
+<ul>
+<li>通用寄存器</li>
+<li>标志寄存器</li>
+<li>指令寄存器</li>
+<li>段寄存器</li>
+<li>...</li>
+</ul>
+<p>（还有一些寄存器目前涉及不到，上面几个是现阶段逆向最常用的）</p>
+<p>至于x64架构，只是将上面一些寄存器进行了拓展。</p>
+<h4 id="通用寄存器"><a class="heading-anchor" href="#通用寄存器">通用寄存器</a></h4>
+<p>x86系统通用寄存器有如下几个：</p>
+<ul>
+<li>eax 通常是和函数的返回值</li>
+<li>ebx 一般用来做数据存取</li>
+<li>ecx 通常用来作为计数器</li>
+<li>edx 乘除运算的默认操作数，也可以用作IO端口</li>
+<li>edi 通常与字符串操作有关</li>
+<li>esi 通常与字符串操作有关</li>
+<li>esp 栈顶寄存器</li>
+<li>ebp 栈基址寄存器</li>
+</ul>
+<p>当然，上面所述都是其常用功能，即高级语言编译器的用法，这几个寄存器也可以做另外用途，自己写汇编的时候不一定遵守其通常行为。</p>
+<p>上述这些寄存器储存大小都是32位，即4字节。若想访问其低16位，可以把前面的 e 去掉，比如 <code>ax</code> <code>si</code> 等等。</p>
+<p>针对x64架构，这些寄存器全部由 r 打头，如 <code>rax</code> ，储存空间变为64位。另外，x64还新增了8个通用寄存器，即 <code>r8-r15</code></p>
+<table>
+<thead>
+<tr>
+<th>64</th>
+<th>低32</th>
+<th>低16</th>
+<th>低8</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rax</td>
+<td>eax</td>
+<td>ax</td>
+<td>al</td>
+</tr>
+<tr>
+<td>rbx</td>
+<td>ebx</td>
+<td>bx</td>
+<td>bl</td>
+</tr>
+<tr>
+<td>rcx</td>
+<td>ecx</td>
+<td>cx</td>
+<td>cl</td>
+</tr>
+<tr>
+<td>rdx</td>
+<td>edx</td>
+<td>dx</td>
+<td>dl</td>
+</tr>
+<tr>
+<td>rsi</td>
+<td>esi</td>
+<td>si</td>
+<td>sil</td>
+</tr>
+<tr>
+<td>rdi</td>
+<td>edi</td>
+<td>di</td>
+<td>dil</td>
+</tr>
+<tr>
+<td>rbp</td>
+<td>ebp</td>
+<td>bp</td>
+<td>bpl</td>
+</tr>
+<tr>
+<td>rsp</td>
+<td>esp</td>
+<td>sp</td>
+<td>spl</td>
+</tr>
+<tr>
+<td>r8</td>
+<td>r8d</td>
+<td>r8w</td>
+<td>r8b</td>
+</tr>
+<tr>
+<td>r9</td>
+<td>r9d</td>
+<td>r9w</td>
+<td>r9b</td>
+</tr>
+<tr>
+<td>r10</td>
+<td>r10d</td>
+<td>r10w</td>
+<td>r10b</td>
+</tr>
+<tr>
+<td>r11</td>
+<td>r11d</td>
+<td>r11w</td>
+<td>r11b</td>
+</tr>
+<tr>
+<td>r12</td>
+<td>r12d</td>
+<td>r12w</td>
+<td>r12b</td>
+</tr>
+<tr>
+<td>r13</td>
+<td>r13d</td>
+<td>r13w</td>
+<td>r13b</td>
+</tr>
+<tr>
+<td>r14</td>
+<td>r14d</td>
+<td>r14w</td>
+<td>r14b</td>
+</tr>
+<tr>
+<td>r15</td>
+<td>r15d</td>
+<td>r15w</td>
+<td>r15b</td>
+</tr>
+</tbody>
+</table>
+<p><code>ax-dx</code> 可访问其高八位为 <code>ah-dh</code></p>
+<h4 id="标志位寄存器"><a class="heading-anchor" href="#标志位寄存器">标志位寄存器</a></h4>
+<p>这个寄存器中有很多标志位，用于储存cpu执行指令的一些状态。</p>
+<p><img src="659280-20201021092122855-1111960429.png" alt="标志位寄存器各个标志位"></p>
+<h4 id="指令寄存器"><a class="heading-anchor" href="#指令寄存器">指令寄存器</a></h4>
+<p>x86下指令寄存器叫 <code>eip</code> ，x64下叫 <code>rip</code> ，他们存放着cpu下一条指令所存放的地址，
+pwn中劫持程序控制流本质上就是修改指令寄存器到期望的地址而完成的。</p>
+<h4 id="段寄存器"><a class="heading-anchor" href="#段寄存器">段寄存器</a></h4>
+<p>x86和x64架构都有如下几个段寄存器，它们都是16位的</p>
+<ul>
+<li>cs 代码段</li>
+<li>ds 数据段</li>
+<li>ss 栈段</li>
+<li>es 拓展段</li>
+<li>fs 数据段</li>
+<li>gs 数据段</li>
+</ul>
+<p>段寄存器的知识略显复杂，尤其在x86和x64的保护模式下，暂且不论。有兴趣的同学可以参考 <a href="https://www.cnblogs.com/xuanyuan/p/13850548.html">一口气看完45个寄存器，CPU核心技术大揭秘</a></p>
+<h3 id="认识一些常见的指令"><a class="heading-anchor" href="#认识一些常见的指令">认识一些常见的指令</a></h3>
+<h4 id="mov"><a class="heading-anchor" href="#mov">mov</a></h4>
+<p>我们先来根据上面 <code>helloworld.asm</code> 程序来讲解</p>
+<pre><code class="language-nasm">_start:                               
+        mov edx, len                
+        mov ecx, msg                
+        mov ebx, 1                  
+        mov eax, 4                  
+        int 0x80                    
+
+        mov ebx, 1                  
+        mov eax, 1                   
+        int 0x80                    
+</code></pre>
+<p>首先是 <code>mov</code> 指令，格式为 <code>mov a,b</code> ，用c语言类比则是 <code>a=b;</code> 。在intel风格的语法中（也就是现在我们展示的语法），<code>a</code> 叫做<strong>目的操作数</strong> ，<code>b</code> 叫做<strong>源操作数</strong>。目的操作数和源操作数有一定的规则，以下语法允许的：</p>
+<table>
+<thead>
+<tr>
+<th>源操作数 <code>b</code></th>
+<th>目的操作数 <code>a</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>立即数</td>
+<td>寄存器</td>
+</tr>
+<tr>
+<td>立即数</td>
+<td>内存</td>
+</tr>
+<tr>
+<td>寄存器</td>
+<td>寄存器</td>
+</tr>
+<tr>
+<td>寄存器</td>
+<td>内存</td>
+</tr>
+<tr>
+<td>内存</td>
+<td>寄存器</td>
+</tr>
+</tbody>
+</table>
+<p>注：在intel风格语法中，目的操作数在前，源操作数在后；在AT&#x26;T语法中，目的操作数在后，源操作数在前。</p>
+<p><strong>立即数</strong>：cpu将指令的一部分解释成数据，这部分数据称为立即数。比如说 <code>mov ebx, 1</code> 中的 <code>1</code> 即为立即数。如果你查看 <code>mov ebx, 1</code> 的机器码（<code>bb 01 00 00 00</code>），你会发现这部分数据确实是存在于指令中的。</p>
+<p>在这里，你可能会对上面的机器码有所疑问，在这里先做解答：</p>
+<ul>
+<li>为什么1是四字节？因为ebx是四字节的寄存器。</li>
+<li>为什么1是倒序的？因为遵循小端序储存。小端序是指一个整数储存在内存中时，其低位（偏小的位）对应低地址，高位对应高地址。上面指令中 <code>bb</code> 端是低地址方向，所以 <code>1</code> 储存在低地址方向。</li>
+<li>为什么是<code>01</code>而不是<code>10</code>？因为显示的时候以一个字节为单位进行显示，事实上其二进制应为 <code>1000 0000</code></li>
+</ul>
+<p>那么<strong>内存</strong>是怎么体现的？</p>
+<p>在nasm语法中，<code>[...]</code> 用以表示取 <code>...</code> 的值作为地址，该地址中的值，<code>...</code>是一个有效表达式。比如 <code>mov eax,[ebx]</code> 约等于c语言中的 <code>eax=*ebx</code> ，相当于 <code>ebx</code> 是一个指针。下面举出一些例子供大家体会：</p>
+<pre><code class="language-nasm">mov eax,[ebx*2+ecx+2]
+mov eax,[ebx*5]
+;下面使用了标签
+mov ebx,[label1+label2*2]
+</code></pre>
+<p><strong>标签</strong>：在nasm语法中，你可以在数据声明或指令前面写一个<strong>标签</strong>，你在编程中可以引用这个标签，这等价于引用此处指令或声明的地址。</p>
+<p>例如 <code>helloworld.asm</code> 中，<code>msg</code> 和 <code>_start</code> 都是标签。标签可以加冒号，也可以不加冒号。标签会在数据引用和跳转上带来极大的便利。</p>
+<p><strong>常量</strong></p>
+<p><em><code>equ</code> 定义一个符号，代表一个常量值：当使用 <code>equ</code> 时，源文件行上必须包含一个label。 <code>equ</code> 的行为就是把给出的label的名字定义成它的操作数(唯一)的值。该定义是不可更改的。</em></p>
+<p>上述 <code>helloworld.asm</code> 中的 <code>len</code> 就是一个例子。它相当于在编译期间将所有 <code>len</code> 都换成一个立即数。</p>
+<h4 id="int-0x80"><a class="heading-anchor" href="#int-0x80">int 0x80</a></h4>
+<p>经过上面的学习，你应该已经了解了 <code>_start</code> 标签下面4行汇编指令的意思，接着的指令是 <code>int 0x80</code>。它向系统发出 <code>0x80</code> 的<strong>软中断</strong>指令，使系统进入<strong>内核态</strong> ，并根据一些<strong>通用寄存器</strong>中的值进行<strong>系统调用</strong>。你可以理解为调用操作系统（linux）的函数。</p>
+<p>进行系统调用时，<code>eax</code> 储存的是<strong>系统调用号</strong>，并分别由 <code>ebx</code> 、<code>ecx</code> 、<code>edx</code> 、<code>esi</code> 、<code>edi</code> 传递第1-5个参数。<strong>系统调用号</strong>决定了调用系统哪个函数。</p>
+<p>在本例中，前面一段的系统调用号是 <code>4</code> ，写成c语言是 <code>write(stdout,msg,len);</code> ，而下面一段则是 <code>exit(0);</code> 。</p>
+<p><a href="https://blog.csdn.net/Nashi_Ko/article/details/120288385">Linux X86架构 32 64系统调用表</a></p>
+<h4 id="针对-helloworldasm-的其他东西"><a class="heading-anchor" href="#针对-helloworldasm-的其他东西">针对 <code>helloworld.asm</code> 的其他东西</a></h4>
+<h5 id="section"><a class="heading-anchor" href="#section">section</a></h5>
+<p><code>section</code> 是一个伪指令，用于表示声明一个段，如数据段、代码段、bss段等，这与<strong>程序运行时内存分布</strong>相对应。</p>
+<h5 id="global"><a class="heading-anchor" href="#global">global</a></h5>
+<p><code>global</code> 也是一个伪代码，表示导出符号到其他模块。</p>
+<h5 id="数据声明"><a class="heading-anchor" href="#数据声明">数据声明</a></h5>
+<p>在声明以初始化的数据的时候，<code>db</code> <code>dw</code> <code>dd</code> <code>dq</code> 分别代表以1、2、4、8个字节为单位，前面需要加上一个标签，相当于指针。</p>
+<p>相对的，声明未初始化数据的时候（声明在bss段） ，使用 <code>resb</code> <code>resw</code> <code>resd</code> <code>resq</code>，后面加上以前面声明类型为单位的数据量，比如 <code>label1 resb 64</code> （声明一个64字节的未初始化变量）。</p>
+<h5 id="与"><a class="heading-anchor" href="#与">$与$$</a></h5>
+<p>$表示从它所在源代码行在编译后的起始地址，$$表示从当前段的起始地址。</p>
+<p>所以 <code>$-msg</code> 表达的是当前源码地址减去 <code>msg</code> 起始地址，即得到 <code>msg</code> 字符串长度</p>
+<h4 id="lea"><a class="heading-anchor" href="#lea">lea</a></h4>
+<p><code>lea</code> 指令用于加载有效地址，用法如下：</p>
+<ul>
+<li><code>lea eax,[401080h]</code> 将一个地址 <code>401080h</code> 写入 <code>eax</code></li>
+<li><code>lea eax,dword [ebx]</code> 将储存了地址的 <code>ebx</code> 中的值写入 <code>eax</code></li>
+<li><code>lea eax, [ebx+ecx*4+8]</code> 计算 <code>ebx+ecx*4+8</code> 的地址并写入 <code>eax</code></li>
+</ul>
+<p>在x64架构中也同理。</p>
+<h4 id="算数指令逻辑指令"><a class="heading-anchor" href="#算数指令逻辑指令">算数指令、逻辑指令</a></h4>
+<p>我们只先提及下面会用到的，其他指令建议自学了解。</p>
+<ul>
+<li><code>add a,b</code> 相当于 <code>a=a+b</code> ，其中 <code>a</code> 可以是一个寄存器或内存地址，<code>b</code> 可以是一个立即数、寄存器或内存地址。</li>
+<li><code>sub a,b</code> 相减，与上面同理。</li>
+</ul>
+<p><a href="https://blog.csdn.net/weixin_40179091/article/details/131768536">asm:常见指令大全</a></p>
+<h4 id="栈与函数"><a class="heading-anchor" href="#栈与函数">栈与函数</a></h4>
+<p>这里的<strong>栈</strong>指的是程序运行时的栈，它由栈基址寄存器 <code>ebp</code> 和栈顶寄存器 <code>esp</code> 来管理。</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span>00:0000│ rsp  0x7fffffffd640 ◂— 0x55460000000000</span></span>
+<span class="line"><span>01:0008│      0x7fffffffd648 ◂— 0x85ddfd55f4464e00</span></span>
+<span class="line"><span>02:0010│ rbp  0x7fffffffd650 ◂— 0x1</span></span>
+<span class="line"><span>03:0018│      0x7fffffffd658 —▸ 0x7ffff7dd9d68 (__libc_start_call_main+120) ◂— mov edi, eax</span></span>
+<span class="line"><span>04:0020│      0x7fffffffd660 —▸ 0x7fffffffd750 —▸ 0x7fffffffd758 ◂— 0x38 /* '8' */</span></span>
+<span class="line"><span>05:0028│      0x7fffffffd668 —▸ 0x5555555551e6 (main) ◂— endbr64</span></span>
+<span class="line"><span>06:0030│      0x7fffffffd670 ◂— 0x155554040</span></span></code></pre>
+<p>这是一个64位程序main函数的栈（使用插件pwndbg）</p>
+<ul>
+<li><code>push</code>
+可以接一个立即数或一个寄存器操作数，将一个值压入栈中。
+例： <code>push eax</code> 等效于 <code>sub esp,4; mov [esp],eax</code></li>
+<li><code>pop</code>
+接一个寄存器，将栈中的值弹入寄存器中。
+例：<code>pop eax</code> 等效于 <code>mov eax,[esp]; add esp,4</code></li>
+<li><code>leave</code>
+不接任何东西，在一个函数结束的时候调用。
+例：<code>leave</code> 等效于 <code>mov esp,ebp; pop ebp</code></li>
+<li><code>call</code>
+调用一个函数，后面接一个地址（或者说是标签）。
+例：<code>call printf</code> 等效于 <code>push eip; jmp printf</code></li>
+<li><code>ret</code>
+从一个函数中返回到原来的执行位置，什么也不接。
+例：<code>ret</code> 等效于 <code>pop eip</code></li>
+</ul>
+<p>可以通过上节课的 <code>overflow32</code> 程序逆向了解栈帧。</p>
+<p>另，下面是一段经典的x86的shellcode</p>
+<pre><code class="language-nasm">section .text
+global _start
+_start:
+    xor    eax,eax
+    push   eax
+    push   0x68732f2f
+    push   0x6e69622f
+    mov    ebx,esp
+    mov    ecx,eax
+    mov    edx,eax
+    mov    al,0xb
+    int    0x80
+    xor    eax,eax
+    inc    eax
+    int    0x80
+</code></pre>
+<p>编译链接：</p>
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">nasm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> elf32</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shellcode.asm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shellcode.o</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ld</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shellcode.o</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shellcode</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> elf_i386</span></span></code></pre>
+<h4 id="比较与跳转"><a class="heading-anchor" href="#比较与跳转">比较与跳转</a></h4>
+<p><a href="https://blog.csdn.net/zmmycsdn/article/details/78511948">汇编跳转指令: JMP、JECXZ、JA、JB、JG、JL、JE、JZ、JS、JC、JO、JP 等</a></p>
+<p><a href="https://blog.csdn.net/WolvenSec/article/details/139244132">汇编：比较&#x26;跳转</a></p></div>
+    <footer class="ap-article__foot">
+      <div class="ap-article__tags"><span class="ap-label">标签</span><ul class="ap-tags"><li><a class="ap-tag" href="/tags/binary/">binary</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/asm/">asm</a></li></ul></div>
+      <nav class="ap-route" aria-label="航线">
+        <a class="ap-route__btn ap-route__btn--prev" href="/posts/discrete-mathematics-graph-theory/" rel="prev"><span class="ap-label">上一篇</span><span class="ap-route__title">离散数学——图论总结归纳</span></a>
+        <a class="ap-route__btn ap-route__btn--next" href="/posts/binary-2024-stack-and-function/" rel="next"><span class="ap-label">下一篇 <svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="ap-route__title">栈与函数</span></a>
+      </nav>
+    </footer>
+  </article>
+          </main>
+          <aside class="ap-panel" aria-label="遥测"><section class="ap-module ap-module--gauge" aria-hidden="true">
+    <div class="ap-gauge">
+      <div class="ap-gauge__head">
+        <span class="ap-label">ALT</span>
+        <span class="ap-gauge__value"><span data-progress-text>000</span><small>%</small></span>
+        <span class="ap-gauge__sec" data-gauge-sec></span>
+      </div>
+      <div class="ap-gauge__track" data-progress-v>
+        <span class="ap-gauge__fill"></span>
+        <span class="ap-gauge__mark"></span>
+      </div>
+      <div class="ap-gauge__scale"><span style="--at:0%">0</span><span style="--at:25%">25</span><span style="--at:50%">50</span><span style="--at:75%">75</span><span style="--at:100%">100</span></div>
+    </div>
+  </section><section class="ap-module">
+    <h2 class="ap-module__head"><span>程序清单</span><span class="ap-module__count">04</span></h2>
+    <ol class="ap-check"><li class="ap-check__item" data-level="0">
+      <a href="#基本概念" data-toc="基本概念">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">01</span>
+        <span class="ap-check__text">基本概念</span>
+      </a>
+    </li><li class="ap-check__item" data-level="0">
+      <a href="#nasm编译器的安装和使用" data-toc="nasm编译器的安装和使用">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">02</span>
+        <span class="ap-check__text">nasm编译器的安装和使用</span>
+      </a>
+    </li><li class="ap-check__item" data-level="0">
+      <a href="#认识寄存器" data-toc="认识寄存器">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">03</span>
+        <span class="ap-check__text">认识寄存器</span>
+      </a>
+    </li><li class="ap-check__item" data-level="0">
+      <a href="#认识一些常见的指令" data-toc="认识一些常见的指令">
+        <span class="ap-check__box" aria-hidden="true"></span>
+        <span class="ap-check__no">04</span>
+        <span class="ap-check__text">认识一些常见的指令</span>
+      </a>
+    </li></ol>
+  </section><section class="ap-module">
+    <h2 class="ap-module__head"><span>本文标签</span><span class="ap-module__count">04</span></h2>
+    <ul class="ap-tags"><li><a class="ap-tag" href="/tags/binary/">binary</a></li><li><a class="ap-tag" href="/tags/pwn/">pwn</a></li><li><a class="ap-tag" href="/tags/ctf/">ctf</a></li><li><a class="ap-tag" href="/tags/asm/">asm</a></li></ul>
+  </section></aside>
+        </div>
+        <footer class="ap-foot">
+    <div class="ap-stripe ap-stripe--thin" aria-hidden="true"></div>
+    <div class="ap-foot__plate">
+      <dl class="ap-foot__grid">
+        <div><dt>OPR</dt><dd>dx3906</dd></div>
+        <div><dt>YR</dt><dd>2026</dd></div>
+        <div><dt>CODE</dt><dd>MIT</dd></div>
+        <div><dt>TEXT</dt><dd>CC BY-NC-SA 4.0</dd></div>
+      </dl>
+      <p class="ap-foot__note">
+        <span>© 2026 dx3906</span>
+        <span class="ap-sep" aria-hidden="true">·</span>
+        <span>由 dxbe 生成</span>
+        <span class="ap-sep" aria-hidden="true">·</span><a href="https://github.com/dx3906999/dx3906999.github.io" rel="noopener">查看源码</a>
+      </p>
+      <p class="ap-foot__serial" aria-hidden="true">SN-2026-ZH-0001 <span>NO STEP</span></p>
+    </div>
+  </footer>
+      </div>
+    </div>
+    <script type="module" src="/assets/apogee/js/site.js?v=cd7c505ced"></script>
+    
+  </body>
+</html>
